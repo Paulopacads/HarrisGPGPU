@@ -11,7 +11,7 @@ class matrix {
         matrix(int rows, int cols);
         ~matrix();
 
-        matrix operator*(float n);
+        matrix *operator*(float n);
 
         float &operator[](int i);
 };

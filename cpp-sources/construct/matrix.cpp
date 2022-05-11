@@ -11,10 +11,10 @@ matrix::~matrix() {
     free(values);
 }
 
-matrix matrix::operator*(float n) {
-    matrix output = matrix(rows, cols);
+matrix *matrix::operator*(float n) {
+    matrix *output = new matrix(rows, cols);
     for (int i = 0; i < rows * cols; i++) {
-        output[i] = values[i] * n;
+        (*output)[i] = values[i] * n;
     }
     return output;
 }
