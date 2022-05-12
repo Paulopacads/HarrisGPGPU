@@ -144,3 +144,4 @@ template matrix<uint8_t>* mat_divide_element_wise<uint8_t, uint8_t>(matrix<uint8
 
 template class matrix<float>;
 template class matrix<uint8_t>;
+template class matrix<bool>;
