@@ -19,6 +19,27 @@ matrix<number>::~matrix() {
 }
 
 template <typename number>
+number matrix<number>::min() {
+    number output = values[0];
+    for (int i = 1; i < rows * cols; i++) {
+        if (values[i] < output)
+            output = values[i];
+    }
+    return output;
+}
+
+template <typename number>
+number matrix<number>::max() {
+    number output = values[0];
+    for (int i = 1; i < rows * cols; i++) {
+        if (values[i] > output)
+            output = values[i];
+    }
+    return output;
+}
+
+
+template <typename number>
 matrix<number> *matrix<number>::transpose() {
     matrix *output = new matrix(cols, rows);
     for (int i = 0; i < rows; i++) {

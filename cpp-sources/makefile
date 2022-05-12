@@ -1,10 +1,10 @@
 CC = g++
 
-CPP_FILES = 
+CPP_FILES = construct/*.cpp tools/*.cpp
 H_FILES =  
 OBJ_FILES = $(CPP_FILES:.cpp=.o)
 
-CXX_FLAGS += -Wall -Wextra -O3 -g -std=c++11
+CXX_FLAGS += -Wall -O3 -g -std=c++17
 LDXX_FLAGS =
 
 all: build

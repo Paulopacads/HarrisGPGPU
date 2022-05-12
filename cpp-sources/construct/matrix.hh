@@ -14,6 +14,9 @@ class matrix {
 
         ~matrix();
 
+        number min();
+        number max();
+
         matrix<number> *transpose();
 
         matrix<number> *operator*(float n);
