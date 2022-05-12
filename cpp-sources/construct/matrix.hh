@@ -15,6 +15,7 @@ class matrix {
         ~matrix();
 
         matrix<number> *operator*(float n);
+        matrix<number> *operator/(float n);
 
         number &operator[](int i);
 };

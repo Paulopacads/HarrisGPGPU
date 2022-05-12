@@ -22,7 +22,16 @@ template <typename number>
 matrix<number> *matrix<number>::operator*(float n) {
     matrix *output = new matrix(rows, cols);
     for (int i = 0; i < rows * cols; i++) {
-        (*output)[i] = values[i] * n;
+        output->values[i] = values[i] * n;
+    }
+    return output;
+}
+
+template <typename number>
+matrix<number> *matrix<number>::operator/(float n) {
+    matrix *output = new matrix(rows, cols);
+    for (int i = 0; i < rows * cols; i++) {
+        output->values[i] = values[i] / n;
     }
     return output;
 }
