@@ -1,6 +1,10 @@
 #ifndef MORPH_HH
 #define MORPH_HH
 
+#include <cmath>
+#include <stdexcept>
+#include "uchar.h"
+
 #include "../construct/matrix.hh"
 
 template <typename num1, typename num2>
@@ -55,6 +59,45 @@ matrix<num1> *erode(matrix<num1> *m1, matrix<num2> *m2) {
         }
     }
     return output;
+}
+
+template <typename number>
+matrix<number> *getStructuringElement(int rows, int cols)
+{
+    int i, j;
+    int r = 0, c = 0;
+    double inv_r2 = 0;
+
+    r = rows/2;
+    c = cols/2;
+    inv_r2 = r ? 1./((double)r*r) : 0;
+
+    matrix<number> *elem = new matrix<number>(rows, cols);
+
+    for( i = 0; i < rows; i++ )
+    {
+        // elem.data : pointer vers premier élément
+        // elem.step : nombre de bytes entre le 1er élément d'un row et celui du row suivant
+        // unsigned char* ptr = elem.data + i*elem.step; <--- ligne d'origine sur de opencv
+        unsigned char* ptr = elem + i*sizeof(number)*cols; /// FIX ME ?
+        int j1 = 0, j2 = 0;
+        int dy = i - r;
+        if( std::abs(dy) <= r )
+        {
+            int dx = c*std::sqrt((r*r - dy*dy)*inv_r2);
+            j1 = std::max( c - dx, 0 );
+            j2 = std::min( c + dx + 1, cols );
+        }
+
+        for( j = 0; j < j1; j++ )
+            ptr[j] = 0;
+        for( ; j < j2; j++ )
+            ptr[j] = 1;
+        for( ; j < rows; j++ )
+            ptr[j] = 0;
+    }
+
+    return elem;
 }
 
 template <typename number>
