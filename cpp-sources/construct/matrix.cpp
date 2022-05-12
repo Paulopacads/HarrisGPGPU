@@ -19,6 +19,17 @@ matrix<number>::~matrix() {
 }
 
 template <typename number>
+matrix<number> *matrix<number>::transpose() {
+    matrix *output = new matrix(cols, rows);
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            output->values[j + i * output->rows] = values[i + j * rows];
+        }
+    }
+    return output;
+}
+
+template <typename number>
 matrix<number> *matrix<number>::operator*(float n) {
     matrix *output = new matrix(rows, cols);
     for (int i = 0; i < rows * cols; i++) {
