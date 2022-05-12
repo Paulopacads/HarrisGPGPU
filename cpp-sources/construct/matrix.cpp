@@ -33,6 +33,18 @@ template <typename number> matrix<number> *matrix<number>::operator/(float n) {
 }
 
 template <typename number>
+matrix<number> *matrix<number>::operator>(float n) {
+    matrix *output = new matrix(rows, cols);
+    for (int i = 0; i < rows * cols; i++) {
+        if ((*output)[i] > n)
+            (*output)[i] = true;
+        else
+            (*output)[i] = false;
+    }
+    return output;
+}
+
+template <typename number>
 number matrix<number>::min() {
     number output = values[0];
     for (int i = 1; i < rows * cols; i++) {
