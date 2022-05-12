@@ -57,4 +57,14 @@ matrix<num1> *erode(matrix<num1> *m1, matrix<num2> *m2) {
     return output;
 }
 
+template <typename number>
+matrix<number> *bubble2maskeroded(matrix<number> *img_gray, int border=10)
+{
+    matrix<bool> *mask = img_gray > 0;
+    matrix<number> *kernel = getStructuringElement<number>(border*2, border*2);
+
+    matrix<number> *mask_er = erode(mask, kernel);
+    return mask_er > 0;
+}
+
 #endif /* MORPH_HH */
