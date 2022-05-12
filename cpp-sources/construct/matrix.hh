@@ -13,9 +13,15 @@ public:
 
   ~matrix();
 
+  number min();
+  number max();
+
+  matrix<number> *transpose();
+
   matrix<number> *operator*(float n);
   matrix<number> *operator/(float n);
   matrix<number> *operator+(float n);
+
 
   number &operator[](int i);
 };

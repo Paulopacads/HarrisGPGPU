@@ -23,12 +23,53 @@ template <typename number> matrix<number> *matrix<number>::operator*(float n) {
   return output;
 }
 
+
 template <typename number> matrix<number> *matrix<number>::operator/(float n) {
   matrix *output = new matrix(rows, cols);
   for (int i = 0; i < rows * cols; i++) {
     output->values[i] = values[i] / n;
   }
   return output;
+
+template <typename number>
+number matrix<number>::min() {
+    number output = values[0];
+    for (int i = 1; i < rows * cols; i++) {
+        if (values[i] < output)
+            output = values[i];
+    }
+    return output;
+}
+
+template <typename number>
+number matrix<number>::max() {
+    number output = values[0];
+    for (int i = 1; i < rows * cols; i++) {
+        if (values[i] > output)
+            output = values[i];
+    }
+    return output;
+}
+
+
+template <typename number>
+matrix<number> *matrix<number>::transpose() {
+    matrix *output = new matrix(cols, rows);
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            output->values[j + i * output->rows] = values[i + j * rows];
+        }
+    }
+    return output;
+}
+
+template <typename number>
+matrix<number> *matrix<number>::operator*(float n) {
+    matrix *output = new matrix(rows, cols);
+    for (int i = 0; i < rows * cols; i++) {
+        output->values[i] = values[i] * n;
+    }
+    return output;
 }
 
 template <typename number> matrix<number> *matrix<number>::operator+(float n) {
