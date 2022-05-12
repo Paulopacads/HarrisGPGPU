@@ -1,17 +1,25 @@
 #include <cstdlib>
+#include <cstdint>
 
 #include "matrix.hh"
 
-matrix::matrix(int rows, int cols)
+template <typename number>
+matrix<number>::matrix(int rows, int cols)
 : rows(rows), cols(cols) {
-    values = (float *) malloc(sizeof(float) * rows * cols);
+    values = (number *) malloc(sizeof(number) * rows * cols);
 }
 
-matrix::~matrix() {
+template <typename number>
+matrix<number>::matrix(int rows, int cols, number *values)
+: rows(rows), cols(cols), values(values) {}
+
+template <typename number>
+matrix<number>::~matrix() {
     free(values);
 }
 
-matrix *matrix::operator*(float n) {
+template <typename number>
+matrix<number> *matrix<number>::operator*(float n) {
     matrix *output = new matrix(rows, cols);
     for (int i = 0; i < rows * cols; i++) {
         (*output)[i] = values[i] * n;
@@ -19,6 +27,10 @@ matrix *matrix::operator*(float n) {
     return output;
 }
 
-float &matrix::operator[](int i) {
+template <typename number>
+number &matrix<number>::operator[](int i) {
     return values[i];
 }
+
+template class matrix<float>;
+template class matrix<uint8_t>;
