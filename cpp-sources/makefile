@@ -1,7 +1,8 @@
 CC = g++
 
-CPP_FILES = construct/*.cpp tools/*.cpp
+CPP_FILES = construct/*.cpp tools/*.cpp derivatives.cpp
 H_FILES =  
+
 OBJ_FILES = $(CPP_FILES:.cpp=.o)
 
 CXX_FLAGS += -Wall -O3 -g -std=c++17
