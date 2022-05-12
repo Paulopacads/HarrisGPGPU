@@ -1,7 +1,7 @@
 CC = g++
 
-CPP_FILES = construct/*.cpp tools/*.cpp derivatives.cpp
-H_FILES =  
+CPP_FILES = construct/*.cpp derivatives.cpp
+H_FILES =  construct/*.cpp tools/*.h derivatives.hh
 
 OBJ_FILES = $(CPP_FILES:.cpp=.o)
 

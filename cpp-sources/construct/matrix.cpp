@@ -30,6 +30,7 @@ template <typename number> matrix<number> *matrix<number>::operator/(float n) {
     output->values[i] = values[i] / n;
   }
   return output;
+}
 
 template <typename number>
 number matrix<number>::min() {
@@ -59,15 +60,6 @@ matrix<number> *matrix<number>::transpose() {
         for (int j = 0; j < cols; j++) {
             output->values[j + i * output->rows] = values[i + j * rows];
         }
-    }
-    return output;
-}
-
-template <typename number>
-matrix<number> *matrix<number>::operator*(float n) {
-    matrix *output = new matrix(rows, cols);
-    for (int i = 0; i < rows * cols; i++) {
-        output->values[i] = values[i] * n;
     }
     return output;
 }
