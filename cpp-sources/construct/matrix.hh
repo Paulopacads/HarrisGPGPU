@@ -35,4 +35,7 @@ matrix<num1> *mat_divide_element_wise(matrix<num1> *mat1, matrix<num2> *mat2);
 template <typename num1, typename num2>
 matrix<num1> *mat_add_element_wise(matrix<num1> *mat1, matrix<num2> *mat2);
 
+template <typename number>
+void quickSort(matrix<number> *arr, int start, int end);
+
 #endif /* MATRIX_HH */

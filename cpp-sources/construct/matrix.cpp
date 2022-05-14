@@ -158,6 +158,67 @@ template matrix<float>* mat_diff_element_wise<float, float>(matrix<float> *mat1,
 template matrix<float>* mat_multiply_element_wise<float, float>(matrix<float> *mat1, matrix<float> *mat2);
 template matrix<float>* mat_divide_element_wise<float, float>(matrix<float> *mat1, matrix<float> *mat2);
 
+template <typename index, typename value>
+int partition(matrix<index> *indices, matrix<value> values, int start, int end)
+{
+
+    value pivot = (*values)[(*indices)[start]];
+
+    int count = 0;
+    for (int i = start + 1; i <= end; i++) {
+        if ((*values)[(*indices)[i]] <= pivot)
+            count++;
+    }
+
+    // Giving pivot element its correct position
+    int pivotIndex = start + count;
+    index swap = (*indices)[pivotIndex];
+    (*indices)[pivotIndex] = (*indices)[start];
+    (*indices)[start] = swap;
+    //swap(arr[pivotIndex], arr[start]);
+
+    // Sorting left and right parts of the pivot element
+    int i = start, j = end;
+
+    while (i < pivotIndex && j > pivotIndex) {
+
+        while ((*values)[(*indices)[i]] <= pivot) {
+            i++;
+        }
+
+        while ((*values)[(*indices)[j]] > pivot) {
+            j--;
+        }
+
+        if (i < pivotIndex && j > pivotIndex) {
+            index swap = (*indices)[i + 1];
+            (*indices)[i++] = (*indices)[j - 1];
+            (*indices)[j--] = swap;
+            //swap(arr[i++], arr[j--]);
+        }
+    }
+
+    return pivotIndex;
+}
+
+template <typename index, typename value>
+void quickSort(matrix<index> *indices, matrix<value> values,int start, int end)
+{
+
+    // base case
+    if (start >= end)
+        return;
+
+    // partitioning the array
+    int p = partition(indices, values, start, end);
+
+    // Sorting the left part
+    quickSort(indices, values, start, p - 1);
+
+    // Sorting the right part
+    quickSort(indices, values, p + 1, end);
+}
+
 template class matrix<float>;
 template class matrix<uint8_t>;
 template class matrix<bool>;
