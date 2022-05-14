@@ -10,5 +10,5 @@ template <typename T> struct tuple_matrix {
 
 matrix<float> *gauss_kernel(int size);
 tuple_matrix<float> gauss_derivative_kernels(int size);
-tuple_matrix<uint8_t> gauss_derivatives(matrix<uint8_t> *img, int size);
-matrix<uint8_t> *compute_harris_response(matrix<uint8_t> *img);
+tuple_matrix<float> gauss_derivatives(matrix<uint8_t> *img, int size);
+matrix<float> *compute_harris_response(matrix<uint8_t> *img);

@@ -2,6 +2,9 @@
 #include <cstdlib>
 #include <sys/types.h>
 
+#include <cstdio>
+#include <cassert>
+
 #include "matrix.hh"
 
 template <typename number>
@@ -78,6 +81,7 @@ matrix<number> *matrix<number>::transpose() {
 
 template <typename number> matrix<number> *matrix<number>::operator+(float n) {
   matrix *output = new matrix(rows, cols);
+
   for (int i = 0; i < rows * cols; i++) {
     output->values[i] = values[i] + n;
   }
@@ -91,7 +95,7 @@ template <typename number> number &matrix<number>::operator[](int i) {
 template <typename num1, typename num2>
 matrix<num1> *mat_multiply_element_wise(matrix<num1> *mat1,
                                         matrix<num2> *mat2) {
-  //assert(mat1->rows == mat2->rows && mat1->cols == mat2->cols);
+  assert(mat1->rows == mat2->rows && mat1->cols == mat2->cols);
 
   matrix<num1> *newMat = new matrix<num1>(mat1->rows, mat1->cols);
 
@@ -149,10 +153,10 @@ matrix<num1> *mat_add_element_wise(matrix<num1> *mat1, matrix<num2> *mat2) {
   return newMat;
 }
 
-template matrix<uint8_t>* mat_add_element_wise<uint8_t, uint8_t>(matrix<uint8_t> *mat1, matrix<uint8_t> *mat2);
-template matrix<uint8_t>* mat_diff_element_wise<uint8_t, uint8_t>(matrix<uint8_t> *mat1, matrix<uint8_t> *mat2);
-template matrix<uint8_t>* mat_multiply_element_wise<uint8_t, uint8_t>(matrix<uint8_t> *mat1, matrix<uint8_t> *mat2);
-template matrix<uint8_t>* mat_divide_element_wise<uint8_t, uint8_t>(matrix<uint8_t> *mat1, matrix<uint8_t> *mat2);
+template matrix<float>* mat_add_element_wise<float, float>(matrix<float> *mat1, matrix<float> *mat2);
+template matrix<float>* mat_diff_element_wise<float, float>(matrix<float> *mat1, matrix<float> *mat2);
+template matrix<float>* mat_multiply_element_wise<float, float>(matrix<float> *mat1, matrix<float> *mat2);
+template matrix<float>* mat_divide_element_wise<float, float>(matrix<float> *mat1, matrix<float> *mat2);
 
 template class matrix<float>;
 template class matrix<uint8_t>;

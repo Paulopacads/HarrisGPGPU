@@ -1,6 +1,6 @@
 #include "construct/matrix.hh"
 #include "tools/convolve.hh"
-#include "derivatices.hh"
+#include "derivatives.hh"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "lib/stb_image.h"
@@ -29,7 +29,11 @@ int main(int argc, char **argv) {
     pixels = stbi_load(filename, &width, &height, &bpp, dim);
     matrix<uint8_t> *image = new matrix<uint8_t>(width, height, pixels);
 
-    compute_harris_response(image);
+    matrix<float> *response = compute_harris_response(image);
+
+    for (int i = 0; i < 10; i++) {
+        printf("%f\n", (*response)[i]);
+    }
 
     return 0;
 }
