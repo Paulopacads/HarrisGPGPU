@@ -31,14 +31,7 @@ int main(int argc, char **argv) {
     pixels = stbi_load(filename, &width, &height, &bpp, dim);
     matrix<uint8_t> *image = new matrix<uint8_t>(height, width, pixels);
 
-    //matrix<float> *response = compute_harris_response(image);
     matrix<int> *response = detect_harris_points(image, atoi(argv[2]));
-
-    printf("%d\n", response->rows);
-
-    for (int i = 0; i < 10; i++) {
-        printf("%d\n", (*response)[i]);
-    }
 
     paint(image, response);
 

@@ -56,35 +56,12 @@ matrix<int> *detect_harris_points(matrix<uint8_t> *image_gray, int max_keypoints
 
     matrix<float> *harris_resp = compute_harris_response(image_gray);
 
-    harris_resp->view();
-
     // 2. Filtering
     printf("Filtering\n");
     // 2.0 Mask init: all our filtering is performed using a mask
     matrix<bool> *detect_mask = new matrix<bool>(harris_resp->rows, harris_resp->cols);
     for (int i = 0; i < detect_mask->rows * detect_mask->cols; i++) {
         (*detect_mask)[i] = true;
-    }
-
-    printf("detect_mask:\n");
-    detect_mask->view();
-
-    printf("bubble2maskeroded\n");
-
-    // 2.1 Background and border removal
-    matrix<bool> *mask_bubble = bubble2maskeroded(image_gray, min_distance);
-
-    int count2 = 0;
-    for (int i = 0; i < mask_bubble->rows * mask_bubble->cols; i++) {
-        count2 += (*mask_bubble)[i];
-    }
-    printf("mask_bubble %d:\n", count2);
-    mask_bubble->view();
-
-    printf("mask_bubble\n");
-    for (int i = 0; i < detect_mask->rows * detect_mask->cols; i++) {
-        if (!((*detect_mask)[i] && (*mask_bubble)[i]))
-            (*detect_mask)[i] = false;
     }
 
     // 2.2 Response threshold
@@ -105,23 +82,12 @@ matrix<int> *detect_harris_points(matrix<uint8_t> *image_gray, int max_keypoints
             (*detect_mask)[i] = false;
     }
 
-    printf("detect_mask:\n");
-    detect_mask->view();
-
     // 2.3 Non-maximal suppression
     printf("Non-maximal suppression\n");
 
     // dil is an image where each local maxima value is propagated to its neighborhood (display it!)
     matrix<bool> *kernel = getStructuringElement(min_distance, min_distance);
     matrix<float> *dil = dilate(harris_resp, kernel);
-
-    int count = 0;
-    for (int i = 0; i < dil->rows * dil->cols; ++i) {
-        if ((*dil)[i] != 0)
-            count++;
-    }
-
-    printf("count: %d\n", count);
 
     // we want to keep only elements which are local maximas in their neighborhood
     matrix<bool> *harris_resp_dil = new matrix<bool>(harris_resp->rows, harris_resp->cols);
@@ -137,8 +103,6 @@ matrix<int> *detect_harris_points(matrix<uint8_t> *image_gray, int max_keypoints
     printf("Select, sort and filter candidates\n");
 
     // get coordinates of candidates
-
-    //matrix<uint8_t> *non_zero_indices = new matrix<uint8_t>(2, cols);
     matrix<int> *candidates_coords = detect_mask->non_zero_transposed();
 
     int nb_candidates = candidates_coords->rows;
@@ -166,7 +130,8 @@ matrix<int> *detect_harris_points(matrix<uint8_t> *image_gray, int max_keypoints
 
     matrix<int> *best_corners_coordinates = new matrix<int>(max_keypoints, 2);
     for (int i = 0; i < max_keypoints; ++i) {
-        (*best_corners_coordinates)[i] = (*candidates_coords)[(*sorted_indices)[i]];
+        (*best_corners_coordinates)[i * 2] = (*candidates_coords)[(*sorted_indices)[i] * 2];
+        (*best_corners_coordinates)[i * 2 + 1] = (*candidates_coords)[(*sorted_indices)[i] * 2 + 1];
     }
 
     return best_corners_coordinates;

@@ -1,5 +1,4 @@
-#ifndef CONVOLVE_HH
-#define CONVOLVE_HH
+#pragma once
 
 #include "../construct/matrix.hh"
 
@@ -35,5 +34,3 @@ matrix<float> *convolve(matrix<num1> *m1, matrix<num2> *m2) {
     }
     return output;
 }
-
-#endif /* CONVOLVE_HH */

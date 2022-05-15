@@ -1,5 +1,4 @@
-#ifndef MORPH_HH
-#define MORPH_HH
+#pragma once
 
 #include <cmath>
 #include <stdexcept>
@@ -65,5 +64,3 @@ matrix<num1> *erode(matrix<num1> *m1, matrix<num2> *m2) {
 matrix<bool> *getStructuringElement(int rows, int cols);
 
 matrix<bool> *bubble2maskeroded(matrix<uint8_t> *img_gray, int border=10);
-
-#endif /* MORPH_HH */

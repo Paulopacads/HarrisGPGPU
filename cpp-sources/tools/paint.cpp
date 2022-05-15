@@ -31,7 +31,7 @@ void paint(matrix<uint8_t> *image, matrix<int> *points) {
     int max_y = 0;
     bool *memory = (bool*) calloc(image->rows * image->cols, sizeof(bool));
     for (size_t i = 0; i < points->rows; i++) {
-        point start = {(*points)[i * 2], (*points)[i * 2 + 1]};
+        point start = {(*points)[i * 2 + 1], (*points)[i * 2]};
         if (start.x > max_x)
             max_x = start.x;
         if (start.y > max_y)
@@ -39,7 +39,5 @@ void paint(matrix<uint8_t> *image, matrix<int> *points) {
         //printf("point(%d, %d)\n", start.x, start.y);
         paint_point(image, memory, 255, 10, start, start);
     }
-    printf("max x: %d\nmax y: %d\n", max_x, max_y);
-    printf("rows: %d\ncols%d\n", image->rows, image->cols);
     free(memory);
 }
