@@ -32,7 +32,7 @@ int main(int argc, char **argv) {
     matrix<uint8_t> *image = new matrix<uint8_t>(width, height, pixels);
 
     //matrix<float> *response = compute_harris_response(image);
-    matrix<int> *response = detect_harris_points(image);
+    matrix<int> *response = detect_harris_points(image, atoi(argv[2]));
 
     printf("%d\n", response->rows);
 
