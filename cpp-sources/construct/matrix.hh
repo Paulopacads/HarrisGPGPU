@@ -4,6 +4,9 @@
 #include <cstdint>
 
 template <typename number> class matrix {
+private:
+  void _view(int i);
+
 public:
   int rows;
   int cols;
@@ -27,6 +30,8 @@ public:
   matrix<bool> *operator>(float n);
 
   number &operator[](int i);
+
+  void view();
 };
 
 template <typename num1, typename num2>

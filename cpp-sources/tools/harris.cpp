@@ -56,6 +56,8 @@ matrix<int> *detect_harris_points(matrix<uint8_t> *image_gray, int max_keypoints
 
     matrix<float> *harris_resp = compute_harris_response(image_gray);
 
+    harris_resp->view();
+
     // 2. Filtering
     printf("Filtering\n");
     // 2.0 Mask init: all our filtering is performed using a mask
@@ -64,8 +66,22 @@ matrix<int> *detect_harris_points(matrix<uint8_t> *image_gray, int max_keypoints
         (*detect_mask)[i] = true;
     }
 
+    printf("detect_mask:\n");
+    detect_mask->view();
+
+    printf("bubble2maskeroded\n");
+
     // 2.1 Background and border removal
     matrix<bool> *mask_bubble = bubble2maskeroded(image_gray, min_distance);
+
+    int count2 = 0;
+    for (int i = 0; i < mask_bubble->rows * mask_bubble->cols; i++) {
+        count2 += (*mask_bubble)[i];
+    }
+    printf("mask_bubble %d:\n", count2);
+    mask_bubble->view();
+
+    printf("mask_bubble\n");
     for (int i = 0; i < detect_mask->rows * detect_mask->cols; i++) {
         if (!((*detect_mask)[i] && (*mask_bubble)[i]))
             (*detect_mask)[i] = false;
@@ -88,6 +104,9 @@ matrix<int> *detect_harris_points(matrix<uint8_t> *image_gray, int max_keypoints
         if (!((*detect_mask)[i] && (*mask_harris)[i]))
             (*detect_mask)[i] = false;
     }
+
+    printf("detect_mask:\n");
+    detect_mask->view();
 
     // 2.3 Non-maximal suppression
     printf("Non-maximal suppression\n");

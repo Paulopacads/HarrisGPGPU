@@ -4,6 +4,7 @@
 
 #include <cstdio>
 #include <cassert>
+#include <iostream>
 
 #include "matrix.hh"
 
@@ -243,6 +244,35 @@ void quickSort(matrix<int> *indices, matrix<number> *values, int start, int end)
 }
 
 template void quickSort(matrix<int> *indices, matrix<float> *values, int start, int end);
+
+template <typename number>
+void matrix<number>::_view(int i) {
+  if (i != 0)
+    std::cout << ' ';
+  std::cout << '[';
+  for (int j = 0; j < 3; j++)
+    std::cout << " " << values[i * cols + j];
+  std::cout << " ...";
+  for (int j = cols - 3; j < cols; j++)
+    std::cout << " " << values[i * cols + j];
+  std::cout << ']';
+  if (i != rows - 1)
+    std::cout << std::endl;
+}
+
+template <typename number>
+void matrix<number>::view() {
+  std::cout << '[';
+  for (int i = 0; i < 3; i++) {
+    _view(i);
+  } 
+  std::cout << " ..." << std::endl;
+  for (int i = rows - 3; i < rows; i++) {
+    _view(i);
+  } 
+  std::cout << ']' << std::endl;
+}
+
 
 template class matrix<float>;
 template class matrix<uint8_t>;

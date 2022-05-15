@@ -29,7 +29,7 @@ int main(int argc, char **argv) {
         printf("error: can't open image\n");
     
     pixels = stbi_load(filename, &width, &height, &bpp, dim);
-    matrix<uint8_t> *image = new matrix<uint8_t>(width, height, pixels);
+    matrix<uint8_t> *image = new matrix<uint8_t>(height, width, pixels);
 
     //matrix<float> *response = compute_harris_response(image);
     matrix<int> *response = detect_harris_points(image, atoi(argv[2]));
