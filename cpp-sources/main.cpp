@@ -2,6 +2,7 @@
 #include "tools/convolve.hh"
 #include "tools/harris.hh"
 #include "tools/morph.hh"
+#include "tools/paint.hh"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "lib/stb_image.h"
@@ -31,12 +32,17 @@ int main(int argc, char **argv) {
     matrix<uint8_t> *image = new matrix<uint8_t>(width, height, pixels);
 
     //matrix<float> *response = compute_harris_response(image);
-    matrix<uint8_t> *response = detect_harris_points(image);
+    matrix<int> *response = detect_harris_points(image);
 
-    /*
+    printf("%d\n", response->rows);
+
     for (int i = 0; i < 10; i++) {
         printf("%d\n", (*response)[i]);
-    }*/
+    }
+
+    paint(image, response);
+
+    stbi_write_png("output.jpg", width, height, 1, pixels, width * 1);
 
     return 0;
 }

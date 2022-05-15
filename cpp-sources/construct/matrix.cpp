@@ -80,18 +80,24 @@ matrix<number> *matrix<number>::transpose() {
 }
 
 template <typename number>
-matrix<uint8_t> *matrix<number>::non_zero_transposed() {
-    matrix<uint8_t> *output = new matrix<uint8_t>(rows * cols, 2);
+matrix<int> *matrix<number>::non_zero_transposed() {
+    int new_rows = 0;
+    for (int i = 0; i < rows * cols; ++i) {
+        if (values[i] == true)
+            new_rows++;
+    }
+
+    matrix<int> *output = new matrix<int>(new_rows, 2);
     int k = 0;
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < cols; j++) {
-            if (values[i * output->cols + i] != 0) {
+            if (values[i * cols + j] == true) {
                 (*output)[k++] = i;
                 (*output)[k++] = j;
             }
         }
     }
-    output->rows = k;
+
     return output;
 }
 
@@ -175,7 +181,7 @@ template matrix<float>* mat_multiply_element_wise<float, float>(matrix<float> *m
 template matrix<float>* mat_divide_element_wise<float, float>(matrix<float> *mat1, matrix<float> *mat2);
 
 template <typename number>
-int partition(matrix<uint8_t> *indices, matrix<number> *values, int start, int end)
+int partition(matrix<int> *indices, matrix<number> *values, int start, int end)
 {
 
     number pivot = (*values)[(*indices)[start]];
@@ -188,7 +194,7 @@ int partition(matrix<uint8_t> *indices, matrix<number> *values, int start, int e
 
     // Giving pivot element its correct position
     int pivotIndex = start + count;
-    uint8_t swap = (*indices)[pivotIndex];
+    int swap = (*indices)[pivotIndex];
     (*indices)[pivotIndex] = (*indices)[start];
     (*indices)[start] = swap;
     //swap(arr[pivotIndex], arr[start]);
@@ -207,7 +213,7 @@ int partition(matrix<uint8_t> *indices, matrix<number> *values, int start, int e
         }
 
         if (i < pivotIndex && j > pivotIndex) {
-            uint8_t swap = (*indices)[i + 1];
+            int swap = (*indices)[i + 1];
             (*indices)[i++] = (*indices)[j - 1];
             (*indices)[j--] = swap;
             //swap(arr[i++], arr[j--]);
@@ -218,7 +224,7 @@ int partition(matrix<uint8_t> *indices, matrix<number> *values, int start, int e
 }
 
 template <typename number>
-void quickSort(matrix<uint8_t> *indices, matrix<number> *values, int start, int end)
+void quickSort(matrix<int> *indices, matrix<number> *values, int start, int end)
 {
 
     // base case
@@ -235,8 +241,9 @@ void quickSort(matrix<uint8_t> *indices, matrix<number> *values, int start, int 
     quickSort(indices, values, p + 1, end);
 }
 
-template void quickSort<float>(matrix<uint8_t> *indices, matrix<float> *values, int start, int end);
+template void quickSort(matrix<int> *indices, matrix<float> *values, int start, int end);
 
 template class matrix<float>;
 template class matrix<uint8_t>;
 template class matrix<bool>;
+template class matrix<int>;
