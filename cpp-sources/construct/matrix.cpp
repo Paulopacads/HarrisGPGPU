@@ -39,7 +39,7 @@ template <typename number>
 matrix<bool> *matrix<number>::operator>(float n) {
     matrix<bool> *output = new matrix<bool>(rows, cols);
     for (int i = 0; i < rows * cols; i++) {
-        if ((*output)[i] > n)
+        if (values[i] > n)
             (*output)[i] = true;
         else
             (*output)[i] = false;
@@ -76,6 +76,22 @@ matrix<number> *matrix<number>::transpose() {
             output->values[j + i * output->rows] = values[i + j * rows];
         }
     }
+    return output;
+}
+
+template <typename number>
+matrix<uint8_t> *matrix<number>::non_zero_transposed() {
+    matrix<uint8_t> *output = new matrix<uint8_t>(rows * cols, 2);
+    int k = 0;
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            if (values[i * output->cols + i] != 0) {
+                (*output)[k++] = i;
+                (*output)[k++] = j;
+            }
+        }
+    }
+    output->rows = k;
     return output;
 }
 

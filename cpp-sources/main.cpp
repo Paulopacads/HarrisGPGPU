@@ -33,9 +33,10 @@ int main(int argc, char **argv) {
     //matrix<float> *response = compute_harris_response(image);
     matrix<uint8_t> *response = detect_harris_points(image);
 
+    /*
     for (int i = 0; i < 10; i++) {
         printf("%d\n", (*response)[i]);
-    }
+    }*/
 
     return 0;
 }

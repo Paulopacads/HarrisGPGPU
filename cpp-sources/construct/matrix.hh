@@ -19,6 +19,7 @@ public:
   number max();
 
   matrix<number> *transpose();
+  matrix<uint8_t> *non_zero_transposed();
 
   matrix<number> *operator*(float n);
   matrix<number> *operator/(float n);

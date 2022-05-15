@@ -74,6 +74,7 @@ matrix<uint8_t> *detect_harris_points(matrix<uint8_t> *image_gray, int max_keypo
     // 2.2 Response threshold
     printf("Response threshold\n");
 
+
     uint8_t min_harris_resp = harris_resp->min();
     auto new_tresh = min_harris_resp + threshold * (harris_resp->max() - min_harris_resp);
 
@@ -93,7 +94,18 @@ matrix<uint8_t> *detect_harris_points(matrix<uint8_t> *image_gray, int max_keypo
 
     // dil is an image where each local maxima value is propagated to its neighborhood (display it!)
     matrix<bool> *kernel = getStructuringElement(min_distance, min_distance);
+
+    for (int i = 0; i < 20; i++) {
+        printf("%d\n", (*kernel)[i]);
+    }
+
     matrix<float> *dil = dilate<float>(harris_resp, kernel);
+
+    for (int i = 0; i < 10; i++) {
+        printf("%f\n", (*dil)[i]);
+    }
+
+    /*
 
     // we want to keep only elements which are local maximas in their neighborhood
 
@@ -115,8 +127,17 @@ matrix<uint8_t> *detect_harris_points(matrix<uint8_t> *image_gray, int max_keypo
         if ((*detect_mask)[i] == true)
             cols++;
     }
-    matrix<uint8_t> *non_zero_indices = new matrix<uint8_t>(2, cols);
-    auto candidates_coords = non_zero_indices->transpose();
+
+    printf("cols: %d\n", cols);
+
+    //matrix<uint8_t> *non_zero_indices = new matrix<uint8_t>(2, cols);
+    matrix<uint8_t> *candidates_coords = detect_mask->non_zero_transposed();
+
+    for (int i = 0; i < 10; i++) {
+        printf("%d\n", (*candidates_coords)[i]);
+    }
+
+    /*
     // ...and their values
     matrix<float> *candidates_values = new matrix<float>(1, cols);
     for (int i = 0, j = 0; i < harris_resp->rows * harris_resp->cols; ++i) {
@@ -144,5 +165,5 @@ matrix<uint8_t> *detect_harris_points(matrix<uint8_t> *image_gray, int max_keypo
     }
 
     return best_corners_coordinates;
-    //return new matrix<uint8_t>(1,1);
+    */return new matrix<uint8_t>(1,1);
 }
