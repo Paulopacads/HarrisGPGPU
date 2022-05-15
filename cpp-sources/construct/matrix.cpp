@@ -213,9 +213,9 @@ int partition(matrix<int> *indices, matrix<number> *values, int start, int end)
         }
 
         if (i < pivotIndex && j > pivotIndex) {
-            int swap = (*indices)[i + 1];
-            (*indices)[i + 1] = (*indices)[j - 1];
-            (*indices)[j - 1] = swap;
+            int swap = (*indices)[i];
+            (*indices)[i] = (*indices)[j];
+            (*indices)[j] = swap;
             i++;
             j--;
             //swap(arr[i++], arr[j--]);
