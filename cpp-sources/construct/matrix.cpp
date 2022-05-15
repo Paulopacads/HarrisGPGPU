@@ -36,8 +36,8 @@ template <typename number> matrix<number> *matrix<number>::operator/(float n) {
 }
 
 template <typename number>
-matrix<number> *matrix<number>::operator>(float n) {
-    matrix *output = new matrix(rows, cols);
+matrix<bool> *matrix<number>::operator>(float n) {
+    matrix<bool> *output = new matrix<bool>(rows, cols);
     for (int i = 0; i < rows * cols; i++) {
         if ((*output)[i] > n)
             (*output)[i] = true;
@@ -158,11 +158,11 @@ template matrix<float>* mat_diff_element_wise<float, float>(matrix<float> *mat1,
 template matrix<float>* mat_multiply_element_wise<float, float>(matrix<float> *mat1, matrix<float> *mat2);
 template matrix<float>* mat_divide_element_wise<float, float>(matrix<float> *mat1, matrix<float> *mat2);
 
-template <typename index, typename value>
-int partition(matrix<index> *indices, matrix<value> values, int start, int end)
+template <typename number>
+int partition(matrix<uint8_t> *indices, matrix<number> *values, int start, int end)
 {
 
-    value pivot = (*values)[(*indices)[start]];
+    number pivot = (*values)[(*indices)[start]];
 
     int count = 0;
     for (int i = start + 1; i <= end; i++) {
@@ -172,7 +172,7 @@ int partition(matrix<index> *indices, matrix<value> values, int start, int end)
 
     // Giving pivot element its correct position
     int pivotIndex = start + count;
-    index swap = (*indices)[pivotIndex];
+    uint8_t swap = (*indices)[pivotIndex];
     (*indices)[pivotIndex] = (*indices)[start];
     (*indices)[start] = swap;
     //swap(arr[pivotIndex], arr[start]);
@@ -191,7 +191,7 @@ int partition(matrix<index> *indices, matrix<value> values, int start, int end)
         }
 
         if (i < pivotIndex && j > pivotIndex) {
-            index swap = (*indices)[i + 1];
+            uint8_t swap = (*indices)[i + 1];
             (*indices)[i++] = (*indices)[j - 1];
             (*indices)[j--] = swap;
             //swap(arr[i++], arr[j--]);
@@ -201,8 +201,8 @@ int partition(matrix<index> *indices, matrix<value> values, int start, int end)
     return pivotIndex;
 }
 
-template <typename index, typename value>
-void quickSort(matrix<index> *indices, matrix<value> values,int start, int end)
+template <typename number>
+void quickSort(matrix<uint8_t> *indices, matrix<number> *values, int start, int end)
 {
 
     // base case
@@ -218,6 +218,8 @@ void quickSort(matrix<index> *indices, matrix<value> values,int start, int end)
     // Sorting the right part
     quickSort(indices, values, p + 1, end);
 }
+
+template void quickSort<float>(matrix<uint8_t> *indices, matrix<float> *values, int start, int end);
 
 template class matrix<float>;
 template class matrix<uint8_t>;

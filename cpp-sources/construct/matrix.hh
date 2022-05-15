@@ -1,6 +1,8 @@
 #ifndef MATRIX_HH
 #define MATRIX_HH
 
+#include <cstdint>
+
 template <typename number> class matrix {
 public:
   int rows;
@@ -21,7 +23,7 @@ public:
   matrix<number> *operator*(float n);
   matrix<number> *operator/(float n);
   matrix<number> *operator+(float n);
-  matrix<number> *operator>(float n);
+  matrix<bool> *operator>(float n);
 
   number &operator[](int i);
 };
@@ -36,6 +38,6 @@ template <typename num1, typename num2>
 matrix<num1> *mat_add_element_wise(matrix<num1> *mat1, matrix<num2> *mat2);
 
 template <typename number>
-void quickSort(matrix<number> *arr, int start, int end);
+void quickSort(matrix<uint8_t> *indices, matrix<number> *values, int start, int end);
 
 #endif /* MATRIX_HH */

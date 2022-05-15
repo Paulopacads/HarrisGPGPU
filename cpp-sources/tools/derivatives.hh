@@ -1,6 +1,6 @@
 #pragma once
 
-#include "construct/matrix.hh"
+#include "../construct/matrix.hh"
 #include <cstdint>
 
 template <typename T> struct tuple_matrix {

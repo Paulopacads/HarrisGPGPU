@@ -1,7 +1,7 @@
 CC = g++
 
-CPP_FILES = construct/*.cpp derivatives.cpp
-H_FILES =  construct/*.cpp tools/*.h derivatives.hh
+CPP_FILES = construct/*.cpp tools/*.cpp
+H_FILES =  construct/*.h tools/*.h
 
 OBJ_FILES = $(CPP_FILES:.cpp=.o)
 
@@ -11,7 +11,7 @@ LDXX_FLAGS =
 all: build
 
 build: $(OBJ_FILES) 
-	$(CC) main.cpp -o cppHarrisDetector $(OBJ_FILES) $(CXX_FLAGS) $(LDXX_FLAGS)
+	$(CC) main.cpp -o cppHarrisDetector $(CPP_FILES) $(CXX_FLAGS) $(LDXX_FLAGS)
 
 .PHONY: all build
 

@@ -1,6 +1,6 @@
-#include "construct/matrix.hh"
+#include "../construct/matrix.hh"
 #include "derivatives.hh"
-#include "tools/convolve.hh"
+#include "convolve.hh"
 #include <cmath>
 #include <cstdint>
 #include <stdlib.h>
@@ -97,50 +97,5 @@ tuple_matrix<float> gauss_derivatives(matrix<uint8_t> *img, int size) {
       imy,
   };
 
-  return res;
-}
-
-matrix<float> *compute_harris_response(matrix<uint8_t> *img) {
-  int derivativeKernelSize = 1;
-  int opening_size = 1;
-
-  tuple_matrix<float> tupleImxy =
-      gauss_derivatives(img, derivativeKernelSize);
-
-  matrix<float> *gauss = gauss_kernel(opening_size);
-
-  matrix<float> *imxx =
-      mat_multiply_element_wise(tupleImxy.mat1, tupleImxy.mat1);
-  matrix<float> *imyy =
-      mat_multiply_element_wise(tupleImxy.mat2, tupleImxy.mat2);
-  matrix<float> *imxy =
-      mat_multiply_element_wise(tupleImxy.mat1, tupleImxy.mat2);
-
-  matrix<float> *wxx = convolve(imxx, gauss);
-  matrix<float> *wxy = convolve(imxy, gauss);
-  matrix<float> *wyy = convolve(imyy, gauss);
-
-  matrix<float> *wdet = mat_diff_element_wise(
-      mat_multiply_element_wise(wxx, wyy), mat_multiply_element_wise(wxy, wxy));
-
-  matrix<float> *wtr = mat_add_element_wise(wxx, wyy);
-
-  matrix<float> *wtr1 =  *wtr + 1;
-  
-  matrix<float> *res = mat_divide_element_wise(wdet, wtr1);
-
-  /*
-  delete gauss;
-  delete imxx;
-  delete imyy;
-  delete imxy;
-  delete wxx;
-  delete wyy;
-  delete wxy;
-  delete wdet;
-  delete wtr;
-
-  return res;
-  */
   return res;
 }
