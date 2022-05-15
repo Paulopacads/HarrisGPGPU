@@ -37,5 +37,8 @@ int main(int argc, char **argv) {
 
     stbi_write_png("output.jpg", width, height, 1, pixels, width * 1);
 
+    delete image;
+    delete response;
+
     return 0;
 }

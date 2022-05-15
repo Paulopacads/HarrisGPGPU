@@ -2,6 +2,9 @@
 #include "convolve.hh"
 #include "morph.hh"
 
+#include <chrono>
+#include <iostream>
+
 matrix<float> *compute_harris_response(matrix<uint8_t> *img) {
   int derivativeKernelSize = 1;
   int opening_size = 1;
@@ -22,8 +25,10 @@ matrix<float> *compute_harris_response(matrix<uint8_t> *img) {
   matrix<float> *wxy = convolve(imxy, gauss);
   matrix<float> *wyy = convolve(imyy, gauss);
 
-  matrix<float> *wdet = mat_diff_element_wise(
-      mat_multiply_element_wise(wxx, wyy), mat_multiply_element_wise(wxy, wxy));
+  matrix<float> *wxxwyy = mat_multiply_element_wise(wxx, wyy);
+  matrix<float> *wxyxy = mat_multiply_element_wise(wxy, wxy);
+
+  matrix<float> *wdet = mat_diff_element_wise(wxxwyy, wxyxy);
 
   matrix<float> *wtr = mat_add_element_wise(wxx, wyy);
 
@@ -31,7 +36,8 @@ matrix<float> *compute_harris_response(matrix<uint8_t> *img) {
   
   matrix<float> *res = mat_divide_element_wise(wdet, wtr1);
 
-  /*
+  delete tupleImxy.mat1;
+  delete tupleImxy.mat2;
   delete gauss;
   delete imxx;
   delete imyy;
@@ -39,11 +45,12 @@ matrix<float> *compute_harris_response(matrix<uint8_t> *img) {
   delete wxx;
   delete wyy;
   delete wxy;
+  delete wxxwyy;
+  delete wxyxy;
   delete wdet;
   delete wtr;
+  delete wtr1;
 
-  return res;
-  */
   return res;
 }
 
@@ -52,22 +59,26 @@ matrix<int> *detect_harris_points(matrix<uint8_t> *image_gray, int max_keypoints
                                      int min_distance, float threshold)
 {
     // 1. Compute Harris corner response
-    printf("Compute Harris corner response\n");
+    auto time1 = std::chrono::system_clock::now();
 
     matrix<float> *harris_resp = compute_harris_response(image_gray);
 
+    auto time2 = std::chrono::system_clock::now();
+    std::chrono::duration<double> diff = time2 - time1;
+    std::cout << "Compute Harris corner response: " << diff.count() << "s" << std::endl;
+
     // 2. Filtering
-    printf("Filtering\n");
     // 2.0 Mask init: all our filtering is performed using a mask
     matrix<bool> *detect_mask = new matrix<bool>(harris_resp->rows, harris_resp->cols);
     for (int i = 0; i < detect_mask->rows * detect_mask->cols; i++) {
         (*detect_mask)[i] = true;
     }
 
+    time1 = std::chrono::system_clock::now();
+    diff = time1 - time2;
+    std::cout << "Filtering: " << diff.count() << "s" << std::endl;
+
     // 2.2 Response threshold
-    printf("Response threshold\n");
-
-
     uint8_t min_harris_resp = harris_resp->min();
     auto new_tresh = min_harris_resp + threshold * (harris_resp->max() - min_harris_resp);
 
@@ -82,9 +93,11 @@ matrix<int> *detect_harris_points(matrix<uint8_t> *image_gray, int max_keypoints
             (*detect_mask)[i] = false;
     }
 
-    // 2.3 Non-maximal suppression
-    printf("Non-maximal suppression\n");
+    time2 = std::chrono::system_clock::now();
+    diff = time2 - time1;
+    std::cout << "Response threshold: " << diff.count() << "s" << std::endl;
 
+    // 2.3 Non-maximal suppression
     // dil is an image where each local maxima value is propagated to its neighborhood (display it!)
     matrix<bool> *kernel = getStructuringElement(min_distance, min_distance);
     matrix<float> *dil = dilate(harris_resp, kernel);
@@ -99,8 +112,11 @@ matrix<int> *detect_harris_points(matrix<uint8_t> *image_gray, int max_keypoints
             (*detect_mask)[i] = false;
     }
 
+    time1 = std::chrono::system_clock::now();
+    diff = time1 - time2;
+    std::cout << "Non-maximal suppression: " << diff.count() << "s" << std::endl;
+
     // 3. Select, sort and filter candidates
-    printf("Select, sort and filter candidates\n");
 
     // get coordinates of candidates
     matrix<int> *candidates_coords = detect_mask->non_zero_transposed();
@@ -114,8 +130,6 @@ matrix<int> *detect_harris_points(matrix<uint8_t> *image_gray, int max_keypoints
             (*candidates_values)[j++] = (*harris_resp)[i];
     }
 
-    printf("sort candidates\n");
-
     // sort candidates
     matrix<int> *sorted_indices = new matrix<int>(1, nb_candidates);
     for (int i = 0; i < sorted_indices->rows * sorted_indices->cols; ++i) {
@@ -123,7 +137,6 @@ matrix<int> *detect_harris_points(matrix<uint8_t> *image_gray, int max_keypoints
     }
     quickSort(sorted_indices, candidates_values, 0, nb_candidates - 1);
     // keep only the bests
-    printf("keep only the bests\n");
 
     if (max_keypoints > nb_candidates)
         max_keypoints = nb_candidates;
@@ -133,6 +146,20 @@ matrix<int> *detect_harris_points(matrix<uint8_t> *image_gray, int max_keypoints
         (*best_corners_coordinates)[i * 2] = (*candidates_coords)[(*sorted_indices)[i] * 2];
         (*best_corners_coordinates)[i * 2 + 1] = (*candidates_coords)[(*sorted_indices)[i] * 2 + 1];
     }
+
+    time2 = std::chrono::system_clock::now();
+    diff = time2 - time1;
+    std::cout << "Select, sort and filter candidates: " << diff.count() << "s" << std::endl;
+
+    delete harris_resp;
+    delete detect_mask;
+    delete mask_harris;
+    delete kernel;
+    delete dil;
+    delete harris_resp_dil;
+    delete candidates_coords;
+    delete candidates_values;
+    delete sorted_indices;
 
     return best_corners_coordinates;
 }

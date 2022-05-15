@@ -75,8 +75,8 @@ tuple_matrix<float> gauss_derivative_kernels(int size) {
     }
   }
 
-  //delete yGrid;
-  //delete xGrid;
+  delete yGrid;
+  delete xGrid;
 
   tuple_matrix<float> res{
       gx,
@@ -96,6 +96,9 @@ tuple_matrix<float> gauss_derivatives(matrix<uint8_t> *img, int size) {
       imx,
       imy,
   };
+
+  delete gxy.mat1;
+  delete gxy.mat2;
 
   return res;
 }
