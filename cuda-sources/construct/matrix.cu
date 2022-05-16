@@ -152,7 +152,6 @@ matrix<float> *mat_multiply_element_wise(matrix<float> *mat1,
   
   multiply_cu<<<blocks, threads>>>(output, mat1->values, mat2->values, mat1->cols);
   gpuErrchk(cudaGetLastError());
-  gpuErrchk(cudaDeviceSynchronize());
 
   return newMat;
 }

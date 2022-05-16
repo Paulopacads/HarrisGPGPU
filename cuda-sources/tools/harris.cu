@@ -137,6 +137,8 @@ matrix<float> *compute_harris_response(matrix<uint8_t> *img) {
       mat_multiply_element_wise(tupleImxy.mat2, tupleImxy.mat2);
   matrix<float> *imxy =
       mat_multiply_element_wise(tupleImxy.mat1, tupleImxy.mat2);
+  cudaFree(tupleImxy.mat1->values);
+  cudaFree(tupleImxy.mat2->values);
 
   float *gauss_gpu;
   cudaMalloc((void **) &gauss_gpu, gauss->rows * gauss->cols * sizeof(float));
@@ -147,11 +149,18 @@ matrix<float> *compute_harris_response(matrix<uint8_t> *img) {
   matrix<float> *wxx = convolve(imxx, gauss_gpu, gauss->rows, gauss->cols);
   matrix<float> *wxy = convolve(imxy, gauss_gpu, gauss->rows, gauss->cols);
   matrix<float> *wyy = convolve(imyy, gauss_gpu, gauss->rows, gauss->cols);
+  cudaFree(imxx->values);
+  cudaFree(imyy->values);
+  cudaFree(imxy->values);
+  cudaFree(gauss_gpu);
 
   matrix<float> *wxxwyy = mat_multiply_element_wise(wxx, wyy);
   matrix<float> *wxyxy = mat_multiply_element_wise(wxy, wxy);
+  gpuErrchk(cudaDeviceSynchronize());
 
   matrix<float> *wdet = mat_diff_element_wise(wxxwyy, wxyxy);
+  cudaFree(wxxwyy->values);
+  cudaFree(wxyxy->values);
 
   matrix<float> *wtr = mat_add_element_wise(wxx, wyy);
 
@@ -159,18 +168,10 @@ matrix<float> *compute_harris_response(matrix<uint8_t> *img) {
   
   matrix<float> *res = mat_divide_element_wise(wdet, wtr1);
 
-  cudaFree(tupleImxy.mat1->values);
-  cudaFree(tupleImxy.mat2->values);
   delete gauss;
-  cudaFree(gauss_gpu);
-  cudaFree(imxx->values);
-  cudaFree(imyy->values);
-  cudaFree(imxy->values);
   cudaFree(wxx->values);
   cudaFree(wyy->values);
   cudaFree(wxy->values);
-  cudaFree(wxxwyy->values);
-  cudaFree(wxyxy->values);
   delete wdet;
   delete wtr;
   delete wtr1;
@@ -226,6 +227,12 @@ matrix<int> *detect_harris_points(matrix<uint8_t> *image_gray, int max_keypoints
     // we want to keep only elements which are local maximas in their neighborhood
     matrix<bool> *harris_resp_dil = matrix_compare_equal(dil->values, harris_resp_cu, harris_resp->rows, harris_resp->cols);
     matrix_compare_inverse(detect_mask->values, harris_resp_dil->values, harris_resp->rows, harris_resp->cols);
+    
+    cudaFree(harris_resp_cu);
+    cudaFree(mask_harris->values);
+    cudaFree(dil->values);
+    cudaFree(harris_resp_dil->values);
+    
     gpuErrchk(cudaDeviceSynchronize());
 
     time1 = std::chrono::system_clock::now();
@@ -245,6 +252,7 @@ matrix<int> *detect_harris_points(matrix<uint8_t> *image_gray, int max_keypoints
         if ((*detect_mask)[i])
             (*candidates_values)[j++] = (*harris_resp)[i];
     }
+    cudaFree(detect_mask->values);
 
     // sort candidates
     int *sorted_indices = (int *) malloc(nb_candidates * sizeof(int));
@@ -274,12 +282,7 @@ matrix<int> *detect_harris_points(matrix<uint8_t> *image_gray, int max_keypoints
     std::cout << "Select, sort and filter candidates: " << diff.count() << "s" << std::endl;
 
     delete harris_resp;
-    cudaFree(harris_resp_cu);
-    cudaFree(detect_mask->values);
-    cudaFree(mask_harris->values);
     cudaFree(kernel->values);
-    cudaFree(dil->values);
-    cudaFree(harris_resp_dil->values);
     delete candidates_coords;
     delete candidates_values;
     free(sorted_indices);
