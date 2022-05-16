@@ -227,14 +227,9 @@ matrix<int> *detect_harris_points(matrix<uint8_t> *image_gray, int max_keypoints
     }
 
     // sort candidates
-    matrix<int> *sorted_indices = new matrix<int>(1, nb_candidates);
-    for (int i = 0; i < sorted_indices->rows * sorted_indices->cols; ++i) {
-        (*sorted_indices)[i] = i;
-    }
-
-    int *test_indices = (int *) malloc(nb_candidates * sizeof(int));
+    int *sorted_indices = (int *) malloc(nb_candidates * sizeof(int));
     for (int i = 0; i < nb_candidates; ++i) {
-        test_indices[i] = i;
+        sorted_indices[i] = i;
     }
 
     float *test_values = (float *) malloc(nb_candidates * sizeof(float));
@@ -242,11 +237,7 @@ matrix<int> *detect_harris_points(matrix<uint8_t> *image_gray, int max_keypoints
         test_values[i] = (*candidates_values)[i];
     }
 
-    thrust::sort_by_key(thrust::host, test_values, test_values + nb_candidates, test_indices);
-
-    for (int i = 0; i < nb_candidates; ++i) {
-        (*sorted_indices)[i] = test_indices[i];
-    }
+    thrust::sort_by_key(thrust::host, test_values, test_values + nb_candidates, sorted_indices);
 
     // quickSort(sorted_indices, candidates_values, 0, nb_candidates - 1);
 
@@ -256,8 +247,8 @@ matrix<int> *detect_harris_points(matrix<uint8_t> *image_gray, int max_keypoints
 
     matrix<int> *best_corners_coordinates = new matrix<int>(max_keypoints, 2);
     for (int i = 0; i < max_keypoints; ++i) {
-        (*best_corners_coordinates)[i * 2] = (*candidates_coords)[(*sorted_indices)[i] * 2];
-        (*best_corners_coordinates)[i * 2 + 1] = (*candidates_coords)[(*sorted_indices)[i] * 2 + 1];
+        (*best_corners_coordinates)[i * 2] = (*candidates_coords)[sorted_indices[i] * 2];
+        (*best_corners_coordinates)[i * 2 + 1] = (*candidates_coords)[sorted_indices[i] * 2 + 1];
     }
 
     time2 = std::chrono::system_clock::now();
@@ -273,8 +264,7 @@ matrix<int> *detect_harris_points(matrix<uint8_t> *image_gray, int max_keypoints
     delete harris_resp_dil;
     delete candidates_coords;
     delete candidates_values;
-    delete sorted_indices;
-    free(test_indices);
+    free(sorted_indices);
     free(test_values);
 
     return best_corners_coordinates;
