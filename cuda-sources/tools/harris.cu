@@ -4,6 +4,8 @@
 
 #include <chrono>
 #include <iostream>
+#include <thrust/sort.h>
+#include <thrust/execution_policy.h>
 
 #define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
 inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=true)
@@ -230,7 +232,23 @@ matrix<int> *detect_harris_points(matrix<uint8_t> *image_gray, int max_keypoints
         (*sorted_indices)[i] = i;
     }
 
-    quickSort(sorted_indices, candidates_values, 0, nb_candidates - 1);
+    int *test_indices = (int *) malloc(nb_candidates * sizeof(int));
+    for (int i = 0; i < nb_candidates; ++i) {
+        test_indices[i] = i;
+    }
+
+    float *test_values = (float *) malloc(nb_candidates * sizeof(float));
+    for (int i = 0; i < nb_candidates; ++i) {
+        test_values[i] = (*candidates_values)[i];
+    }
+
+    thrust::sort_by_key(thrust::host, test_values, test_values + nb_candidates, test_indices);
+
+    for (int i = 0; i < nb_candidates; ++i) {
+        (*sorted_indices)[i] = test_indices[i];
+    }
+
+    // quickSort(sorted_indices, candidates_values, 0, nb_candidates - 1);
 
     // keep only the bests
     if (max_keypoints > nb_candidates)
@@ -256,6 +274,8 @@ matrix<int> *detect_harris_points(matrix<uint8_t> *image_gray, int max_keypoints
     delete candidates_coords;
     delete candidates_values;
     delete sorted_indices;
+    free(test_indices);
+    free(test_values);
 
     return best_corners_coordinates;
 }
