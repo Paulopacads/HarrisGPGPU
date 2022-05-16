@@ -117,9 +117,15 @@ matrix<float> *compute_harris_response(matrix<uint8_t> *img) {
   matrix<float> *imxy =
       mat_multiply_element_wise(tupleImxy.mat1, tupleImxy.mat2);
 
-  matrix<float> *wxx = convolve(imxx, gauss);
-  matrix<float> *wxy = convolve(imxy, gauss);
-  matrix<float> *wyy = convolve(imyy, gauss);
+  float *gauss_gpu;
+  cudaMalloc((void **) &gauss_gpu, gauss->rows * gauss->cols * sizeof(float));
+
+  cudaMemcpy(gauss_gpu, gauss->values, gauss->rows * gauss->cols * sizeof(float), cudaMemcpyHostToDevice);
+  gpuErrchk(cudaGetLastError());
+
+  matrix<float> *wxx = convolve(imxx, gauss_gpu, gauss->rows, gauss->cols);
+  matrix<float> *wxy = convolve(imxy, gauss_gpu, gauss->rows, gauss->cols);
+  matrix<float> *wyy = convolve(imyy, gauss_gpu, gauss->rows, gauss->cols);
 
   matrix<float> *wxxwyy = mat_multiply_element_wise(wxx, wyy);
   matrix<float> *wxyxy = mat_multiply_element_wise(wxy, wxy);
@@ -135,6 +141,7 @@ matrix<float> *compute_harris_response(matrix<uint8_t> *img) {
   cudaFree(tupleImxy.mat1->values);
   cudaFree(tupleImxy.mat2->values);
   delete gauss;
+  cudaFree(gauss_gpu);
   delete imxx;
   delete imyy;
   delete imxy;

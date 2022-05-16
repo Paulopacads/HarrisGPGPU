@@ -4,8 +4,8 @@
 
 #include <cstdio>
 
-template <typename num>
-matrix<float> *convolve(matrix<num> *m1, matrix<float> *m2);
+matrix<float> *convolve(uint8_t *m1, matrix<float> *m2, int m1_rows, int m1_cols);
+matrix<float> *convolve(matrix<float> *m1, float *m2, int m2_rows, int m2_cols);
 
 /*
 template <typename num1, typename num2>
