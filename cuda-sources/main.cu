@@ -21,21 +21,25 @@ int main(int argc, char **argv) {
 
     const char *filename = argv[1];
 
-    int dim = 1;
     uint8_t *pixels = nullptr;
     int width, height, bpp;
 
     if (!stbi_info(filename, &width, &height, &bpp))
         printf("error: can't open image\n");
     
-    pixels = stbi_load(filename, &width, &height, &bpp, dim);
-    matrix<uint8_t> *image = new matrix<uint8_t>(height, width, pixels);
+    pixels = stbi_load(filename, &width, &height, &bpp, 1);
+    matrix<uint8_t> *gray_image = new matrix<uint8_t>(height, width, pixels);
 
-    matrix<int> *response = detect_harris_points(image, atoi(argv[2]));
+    matrix<int> *response = detect_harris_points(gray_image, atoi(argv[2]));
+
+    delete gray_image;
+
+    pixels = stbi_load(filename, &width, &height, &bpp, 3);
+    matrix<uint8_t> *image = new matrix<uint8_t>(height, width * 3, pixels);
 
     paint(image, response);
 
-    stbi_write_png("output.jpg", width, height, 1, pixels, width * 1);
+    stbi_write_png("output.jpg", width, height, 3, pixels, width * 3);
 
     delete image;
     delete response;

@@ -13,31 +13,33 @@ double dist(point p1, point p2) {
 }
 
 
-void paint_point(matrix<uint8_t> *image, bool memory[], int color, double radius,
+void paint_point(matrix<uint8_t> *image, bool memory[], double radius,
     point center, point p) {
-    if (p.x >= 0 && p.y >= 0 && p.x < image->cols && p.y < image->rows
-        && dist(center, p) < radius && memory[p.y * image->cols + p.x] == 0) {
-        (*image)[p.y * image->cols + p.x] = color;
-        memory[p.y * image->cols + p.x] = 1;
-        paint_point(image, memory, color, radius, center, {p.x+1, p.y});
-        paint_point(image, memory, color, radius, center, {p.x, p.y+1});
-        paint_point(image, memory, color, radius, center, {p.x-1, p.y});
-        paint_point(image, memory, color, radius, center, {p.x, p.y-1});
+    if (p.x >= 0 && p.y >= 0 && p.x < (image->cols / 3) && p.y < image->rows
+        && dist(center, p) < radius && memory[p.y * (image->cols / 3) + p.x] == 0) {
+        (*image)[p.y * image->cols + p.x * 3] = 255;
+        (*image)[p.y * image->cols + p.x * 3 + 1] = 0;
+        (*image)[p.y * image->cols + p.x * 3 + 2] = 0;
+        memory[p.y * (image->cols / 3) + p.x] = 1;
+        paint_point(image, memory, radius, center, {p.x+1, p.y});
+        paint_point(image, memory, radius, center, {p.x, p.y+1});
+        paint_point(image, memory, radius, center, {p.x-1, p.y});
+        paint_point(image, memory, radius, center, {p.x, p.y-1});
     }
 }
 
 void paint(matrix<uint8_t> *image, matrix<int> *points) {
     int max_x = 0;
     int max_y = 0;
-    bool *memory = (bool*) calloc(image->rows * image->cols, sizeof(bool));
+    bool *memory = (bool*) calloc(image->rows * (image->cols / 3), sizeof(bool));
     for (size_t i = 0; i < points->rows; i++) {
         point start = {(*points)[i * 2 + 1], (*points)[i * 2]};
         if (start.x > max_x)
             max_x = start.x;
         if (start.y > max_y)
             max_y = start.y;
-        //printf("point(%d, %d)\n", start.x, start.y);
-        paint_point(image, memory, 255, 10, start, start);
+
+        paint_point(image, memory, 10, start, start);
     }
     free(memory);
 }
