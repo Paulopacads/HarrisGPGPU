@@ -1,13 +1,21 @@
 #include "harris.hh"
 #include "convolve.hh"
 #include "morph.hh"
-#include <thrust/sort.h>
-#include <thrust/execution_policy.h>
 
 #include <chrono>
 #include <iostream>
 
-__global__ void set_array_bool(float *mat, int mat_rows, int mat_cols, bool value) {
+#define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
+inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=true)
+{
+   if (code != cudaSuccess) 
+   {
+      fprintf(stderr,"GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
+      if (abort) exit(code);
+   }
+}
+
+__global__ void set_array_bool(bool *mat, int mat_rows, int mat_cols, bool value) {
         
     int i = threadIdx.y + blockIdx.y * blockDim.y;
     int j = threadIdx.x + blockIdx.x * blockDim.x;
@@ -37,6 +45,58 @@ __global__ void set_bool_inverse(bool* m1, bool *m2, int mat_rows, int mat_cols)
     int j = threadIdx.x + blockIdx.x * blockDim.x;
 
     m1[i * mat_cols + j] = !(m1[i * mat_cols + j] && m2[i * mat_cols + j]);
+}
+
+matrix<bool>* create_array_bool(int mat_rows, int mat_cols, bool value) {
+    bool* output;
+
+    cudaMallocManaged(&output, mat_rows * mat_cols * sizeof(bool));
+    gpuErrchk(cudaGetLastError());
+
+    matrix<bool> *detect_mask = new matrix<bool>(mat_rows, mat_cols, output);
+    
+    int tx = 24;
+    int ty = 16;
+
+    dim3 blocks(mat_cols / tx, mat_rows / ty);
+    dim3 threads(tx, ty);
+    
+    set_array_bool<<<blocks, threads>>>(output, mat_rows, mat_cols, true);
+    gpuErrchk(cudaGetLastError());
+
+
+    return detect_mask;
+}
+
+matrix<bool> *create_mask_harris(int mat_rows, int mat_cols, int threshold, float* harris_resp) {
+    bool* output;
+
+    cudaMalloc(&output, mat_rows * mat_cols * sizeof(bool));
+    gpuErrchk(cudaGetLastError());
+
+    matrix<bool> *mask = new matrix<bool>(mat_rows, mat_cols, output);
+    
+    int tx = 24;
+    int ty = 16;
+
+    dim3 blocks(mat_cols / tx, mat_rows / ty);
+    dim3 threads(tx, ty);
+    
+    set_bool_inferior<<<blocks, threads>>>(output, harris_resp, mat_rows, mat_cols, true);
+    gpuErrchk(cudaGetLastError());
+
+    return mask;
+}
+
+void matrix_compare(bool* m1, bool* m2, int mat_rows, int mat_cols) {
+    int tx = 24;
+    int ty = 16;
+
+    dim3 blocks(mat_cols / tx, mat_rows / ty);
+    dim3 threads(tx, ty);
+
+    set_bool_inverse<<<blocks, threads>>>(m1, m2, mat_rows, mat_cols);
+    gpuErrchk(cudaGetLastError());
 }
 
 matrix<float> *compute_harris_response(matrix<uint8_t> *img) {
@@ -100,13 +160,18 @@ matrix<int> *detect_harris_points(matrix<uint8_t> *image_gray, int max_keypoints
     auto time2 = std::chrono::system_clock::now();
     std::chrono::duration<double> diff = time2 - time1;
     std::cout << "Compute Harris corner response: " << diff.count() << "s" << std::endl;
+    
+    float* harris_resp_cu; 
+    cudaMalloc((void **) &harris_resp_cu, harris_resp->cols * harris_resp -> rows * sizeof(float));
+    gpuErrchk(cudaGetLastError());
+
+    cudaMemcpy(harris_resp_cu, harris_resp->values, harris_resp->cols * harris_resp -> rows * sizeof(float), cudaMemcpyHostToDevice);
+    gpuErrchk(cudaGetLastError());
 
     // 2. Filtering
     // 2.0 Mask init: all our filtering is performed using a mask
-    matrix<bool> *detect_mask = new matrix<bool>(harris_resp->rows, harris_resp->cols);
-    for (int i = 0; i < detect_mask->rows * detect_mask->cols; i++) {
-        (*detect_mask)[i] = true;
-    }
+
+    matrix<bool> *detect_mask = create_array_bool(harris_resp->rows, harris_resp->cols, true);
 
     time1 = std::chrono::system_clock::now();
     diff = time1 - time2;
@@ -117,15 +182,10 @@ matrix<int> *detect_harris_points(matrix<uint8_t> *image_gray, int max_keypoints
     auto new_tresh = min_harris_resp + threshold * (harris_resp->max() - min_harris_resp);
 
     // remove low response elements
-    matrix<bool> *mask_harris = new matrix<bool>(harris_resp->rows, harris_resp->cols);
-    for (int i = 0; i < mask_harris->rows * mask_harris->cols; ++i) {
-        (*mask_harris)[i] = (*harris_resp)[i] > new_tresh ? true : false;
-    }
+    matrix<bool> *mask_harris = create_mask_harris(harris_resp->rows, harris_resp->cols, new_tresh, harris_resp_cu);    
+    matrix_compare(detect_mask->values, mask_harris->values, harris_resp->rows, harris_resp->cols);
 
-    for (int i = 0; i < detect_mask->rows * detect_mask->cols; i++) {
-        if (!((*detect_mask)[i] && (*mask_harris)[i]))
-            (*detect_mask)[i] = false;
-    }
+    gpuErrchk(cudaDeviceSynchronize());
 
     time2 = std::chrono::system_clock::now();
     diff = time2 - time1;
@@ -169,7 +229,7 @@ matrix<int> *detect_harris_points(matrix<uint8_t> *image_gray, int max_keypoints
     for (int i = 0; i < sorted_indices->rows * sorted_indices->cols; ++i) {
         (*sorted_indices)[i] = i;
     }
-    
+
     bubbleSort(sorted_indices, candidates_values, nb_candidates);
 
     // keep only the bests
@@ -187,8 +247,9 @@ matrix<int> *detect_harris_points(matrix<uint8_t> *image_gray, int max_keypoints
     std::cout << "Select, sort and filter candidates: " << diff.count() << "s" << std::endl;
 
     delete harris_resp;
-    delete detect_mask;
-    delete mask_harris;
+    cudaFree(harris_resp_cu);
+    cudaFree(detect_mask->values);
+    cudaFree(mask_harris->values);
     cudaFree(kernel->values);
     cudaFree(dil->values);
     delete harris_resp_dil;
