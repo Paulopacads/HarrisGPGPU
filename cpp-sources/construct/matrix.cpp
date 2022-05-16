@@ -228,7 +228,6 @@ int partition(matrix<int> *indices, matrix<number> *values, int start, int end)
 template <typename number>
 void quickSort(matrix<int> *indices, matrix<number> *values, int start, int end)
 {
-
     // base case
     if (start >= end)
         return;
@@ -244,6 +243,24 @@ void quickSort(matrix<int> *indices, matrix<number> *values, int start, int end)
 }
 
 template void quickSort(matrix<int> *indices, matrix<float> *values, int start, int end);
+
+void bubbleSort(matrix<int> *indices, matrix<float> *values, int n)
+{
+    for (int i = 0; i < n - 1; i++)
+    {
+        // Last i elements are already
+        // in place
+        for (int j = 0; j < n - i - 1; j++)
+        {
+            if ((*values)[(*indices)[j]] > (*values)[(*indices)[j + 1]])
+            {
+                int swap = (*indices)[j];
+                (*indices)[j] = (*indices)[j + 1];
+                (*indices)[j + 1] = swap;
+            }
+        }
+    }
+}
 
 template <typename number>
 void matrix<number>::_view(int i) {

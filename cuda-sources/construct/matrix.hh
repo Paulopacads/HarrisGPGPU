@@ -44,3 +44,5 @@ matrix<num1> *mat_add_element_wise(matrix<num1> *mat1, matrix<num2> *mat2);
 
 template <typename number>
 void quickSort(matrix<int> *indices, matrix<number> *values, int start, int end);
+
+void bubbleSort(matrix<int> *indices, matrix<float> *values, int n);

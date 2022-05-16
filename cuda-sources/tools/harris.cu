@@ -135,9 +135,10 @@ matrix<int> *detect_harris_points(matrix<uint8_t> *image_gray, int max_keypoints
     for (int i = 0; i < sorted_indices->rows * sorted_indices->cols; ++i) {
         (*sorted_indices)[i] = i;
     }
-    quickSort(sorted_indices, candidates_values, 0, nb_candidates - 1);
-    // keep only the bests
 
+    bubbleSort(sorted_indices, candidates_values, nb_candidates);
+
+    // keep only the bests
     if (max_keypoints > nb_candidates)
         max_keypoints = nb_candidates;
 
