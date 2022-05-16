@@ -270,20 +270,6 @@ void quickSort(matrix<int> *indices, matrix<number> *values, int start, int end)
 
 template void quickSort(matrix<int> *indices, matrix<float> *values, int start, int end);
 
-__global__ void bubbleSort_GPU(int *indices, float *values, int n)
-{
-    
-    int i = threadIdx.y + blockIdx.y * blockDim.y;
-    int j = threadIdx.x + blockIdx.x * blockDim.x;
-
-    if (values[indices[j]] > values[indices[j + 1]])
-    {
-        int swap = indices[j];
-        indices[j] = indices[j + 1];
-        indices[j + 1] = swap;
-    }
-}
-
 void bubbleSort(matrix<int> *indices, matrix<float> *values, int n)
 {
     for (int i = 0; i < n - 1; i++)
