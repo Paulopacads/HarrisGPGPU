@@ -7,6 +7,16 @@
 
 #include <cstdio>
 
+#define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
+inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=true)
+{
+   if (code != cudaSuccess) 
+   {
+      fprintf(stderr,"GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
+      if (abort) exit(code);
+   }
+}
+
 using namespace std;
 
 matrix<float> *mgridY(int size) {
@@ -89,14 +99,21 @@ tuple_matrix<float> gauss_derivative_kernels(int size) {
 tuple_matrix<float> gauss_derivatives(matrix<uint8_t> *img, int size) {
   tuple_matrix<float> gxy = gauss_derivative_kernels(size);
 
-  matrix<float> *imx = convolve(img, gxy.mat1);
-  matrix<float> *imy = convolve(img, gxy.mat2);
+  uint8_t *img_gpu;
+  cudaMalloc((void **) &img_gpu, img->rows * img->cols * sizeof(uint8_t));
+
+  cudaMemcpy(img_gpu, img->values, img->rows * img->cols * sizeof(uint8_t), cudaMemcpyHostToDevice);
+  gpuErrchk(cudaGetLastError());
+
+  matrix<float> *imx = convolve(img_gpu, gxy.mat1, img->rows, img->cols);
+  matrix<float> *imy = convolve(img_gpu, gxy.mat2, img->rows, img->cols);
 
   tuple_matrix<float> res{
       imx,
       imy,
   };
 
+  cudaFree(img_gpu);
   delete gxy.mat1;
   delete gxy.mat2;
 

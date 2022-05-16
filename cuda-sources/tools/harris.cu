@@ -4,6 +4,8 @@
 
 #include <chrono>
 #include <iostream>
+#include <thrust/sort.h>
+#include <thrust/execution_policy.h>
 
 #define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
 inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=true)
@@ -136,9 +138,15 @@ matrix<float> *compute_harris_response(matrix<uint8_t> *img) {
   matrix<float> *imxy =
       mat_multiply_element_wise(tupleImxy.mat1, tupleImxy.mat2);
 
-  matrix<float> *wxx = convolve(imxx, gauss);
-  matrix<float> *wxy = convolve(imxy, gauss);
-  matrix<float> *wyy = convolve(imyy, gauss);
+  float *gauss_gpu;
+  cudaMalloc((void **) &gauss_gpu, gauss->rows * gauss->cols * sizeof(float));
+
+  cudaMemcpy(gauss_gpu, gauss->values, gauss->rows * gauss->cols * sizeof(float), cudaMemcpyHostToDevice);
+  gpuErrchk(cudaGetLastError());
+
+  matrix<float> *wxx = convolve(imxx, gauss_gpu, gauss->rows, gauss->cols);
+  matrix<float> *wxy = convolve(imxy, gauss_gpu, gauss->rows, gauss->cols);
+  matrix<float> *wyy = convolve(imyy, gauss_gpu, gauss->rows, gauss->cols);
 
   matrix<float> *wxxwyy = mat_multiply_element_wise(wxx, wyy);
   matrix<float> *wxyxy = mat_multiply_element_wise(wxy, wxy);
@@ -154,6 +162,7 @@ matrix<float> *compute_harris_response(matrix<uint8_t> *img) {
   cudaFree(tupleImxy.mat1->values);
   cudaFree(tupleImxy.mat2->values);
   delete gauss;
+  cudaFree(gauss_gpu);
   delete imxx;
   delete imyy;
   delete imxy;
@@ -241,12 +250,19 @@ matrix<int> *detect_harris_points(matrix<uint8_t> *image_gray, int max_keypoints
     }
 
     // sort candidates
-    matrix<int> *sorted_indices = new matrix<int>(1, nb_candidates);
-    for (int i = 0; i < sorted_indices->rows * sorted_indices->cols; ++i) {
-        (*sorted_indices)[i] = i;
+    int *sorted_indices = (int *) malloc(nb_candidates * sizeof(int));
+    for (int i = 0; i < nb_candidates; ++i) {
+        sorted_indices[i] = i;
     }
 
-    bubbleSort(sorted_indices, candidates_values, nb_candidates);
+    float *test_values = (float *) malloc(nb_candidates * sizeof(float));
+    for (int i = 0; i < nb_candidates; ++i) {
+        test_values[i] = (*candidates_values)[i];
+    }
+
+    thrust::sort_by_key(thrust::host, test_values, test_values + nb_candidates, sorted_indices);
+
+    // quickSort(sorted_indices, candidates_values, 0, nb_candidates - 1);
 
     // keep only the bests
     if (max_keypoints > nb_candidates)
@@ -254,8 +270,8 @@ matrix<int> *detect_harris_points(matrix<uint8_t> *image_gray, int max_keypoints
 
     matrix<int> *best_corners_coordinates = new matrix<int>(max_keypoints, 2);
     for (int i = 0; i < max_keypoints; ++i) {
-        (*best_corners_coordinates)[i * 2] = (*candidates_coords)[(*sorted_indices)[i] * 2];
-        (*best_corners_coordinates)[i * 2 + 1] = (*candidates_coords)[(*sorted_indices)[i] * 2 + 1];
+        (*best_corners_coordinates)[i * 2] = (*candidates_coords)[sorted_indices[i] * 2];
+        (*best_corners_coordinates)[i * 2 + 1] = (*candidates_coords)[sorted_indices[i] * 2 + 1];
     }
 
     time2 = std::chrono::system_clock::now();
@@ -271,7 +287,8 @@ matrix<int> *detect_harris_points(matrix<uint8_t> *image_gray, int max_keypoints
     delete harris_resp_dil;
     delete candidates_coords;
     delete candidates_values;
-    delete sorted_indices;
+    free(sorted_indices);
+    free(test_values);
 
     return best_corners_coordinates;
 }

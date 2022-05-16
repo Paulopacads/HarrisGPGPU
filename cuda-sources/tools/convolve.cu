@@ -36,8 +36,37 @@ __global__ void convolve_pixel(float *output, num *m1, float *m2, int m1_rows, i
     output[i * m1_cols + j] = conv;
 }
 
-template <typename num>
-matrix<float> *convolve(matrix<num> *m1, matrix<float> *m2) {
+matrix<float> *convolve(uint8_t *m1, matrix<float> *m2, int m1_rows, int m1_cols) {
+    int tx = 24;
+    int ty = 16;
+
+    dim3 blocks(m1_cols / tx, m1_rows / ty);
+    dim3 threads(tx, ty);
+
+    float *output_gpu;
+    float *m2_gpu;
+
+    cudaMallocManaged(&output_gpu,  m1_rows * m1_cols * sizeof(float));
+    gpuErrchk(cudaGetLastError());
+
+    cudaMalloc((void **) &m2_gpu, m2->rows * m2->cols * sizeof(float));
+
+    matrix<float> *output = new matrix<float>(m1_rows, m1_cols, output_gpu);
+
+    cudaMemcpy(m2_gpu, m2->values, m2->rows * m2->cols * sizeof(float), cudaMemcpyHostToDevice);
+    gpuErrchk(cudaGetLastError());
+    
+    convolve_pixel<<<blocks, threads>>>(output->values, m1, m2_gpu,
+    m1_rows, m2->rows, m1_cols, m2->cols);
+    gpuErrchk(cudaGetLastError());
+    gpuErrchk(cudaDeviceSynchronize());
+
+    cudaFree(m2_gpu);
+
+    return output;
+}
+
+matrix<float> *convolve(matrix<float> *m1, float *m2, int m2_rows, int m2_cols) {
     int tx = 24;
     int ty = 16;
 
@@ -45,35 +74,27 @@ matrix<float> *convolve(matrix<num> *m1, matrix<float> *m2) {
     dim3 threads(tx, ty);
 
     float *output_gpu;
-    num *m1_gpu;
-    float *m2_gpu;
+    float *m1_gpu;
 
     cudaMallocManaged(&output_gpu,  m1->rows * m1->cols * sizeof(float));
     gpuErrchk(cudaGetLastError());
 
-    cudaMalloc((void **) &m1_gpu, m1->rows * m1->cols * sizeof(num));
-    cudaMalloc((void **) &m2_gpu, m2->rows * m2->cols * sizeof(float));
+    cudaMalloc((void **) &m1_gpu, m1->rows * m1->cols * sizeof(float));
 
     matrix<float> *output = new matrix<float>(m1->rows, m1->cols, output_gpu);
 
-    cudaMemcpy(m1_gpu, m1->values, m1->rows * m1->cols * sizeof(num), cudaMemcpyHostToDevice);
-    gpuErrchk(cudaGetLastError());
-
-    cudaMemcpy(m2_gpu, m2->values, m2->rows * m2->cols * sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(m1_gpu, m1->values, m1->rows * m1->cols * sizeof(float), cudaMemcpyHostToDevice);
     gpuErrchk(cudaGetLastError());
     
-    convolve_pixel<<<blocks, threads>>>(output->values, m1_gpu, m2_gpu,
-    m1->rows, m2->rows, m1->cols, m2->cols);
+    convolve_pixel<<<blocks, threads>>>(output->values, m1_gpu, m2,
+    m1->rows, m2_rows, m1->cols, m2_cols);
     gpuErrchk(cudaGetLastError());
     gpuErrchk(cudaDeviceSynchronize());
 
     cudaFree(m1_gpu);
-    cudaFree(m2_gpu);
 
     return output;
 }
 
 template void __global__ convolve_pixel<uint8_t>(float *output, uint8_t *m1, float *m2, int m1_rows, int m2_rows, int m1_cols, int m2_cols);
 template void __global__ convolve_pixel<float>(float *output, float *m1, float *m2, int m1_rows, int m2_rows, int m1_cols, int m2_cols);
-template matrix<float>* convolve<uint8_t>(matrix<uint8_t> *m1, matrix<float> *m2);
-template matrix<float>* convolve<float>(matrix<float> *m1, matrix<float> *m2);
