@@ -33,7 +33,7 @@ __global__ void set_bool_inferior(bool* output, float *mat, int mat_rows, int ma
     output[i * mat_cols + j] = mat[i * mat_cols + j] > threshold;
 }
 
-__global__ void set_bool_equal(bool*ourput, float* mat1, float*mat2, int mat_rows, int mat_cols, float threshold) {
+__global__ void set_bool_equal(bool*ourput, float* mat1, float*mat2, int mat_rows, int mat_cols) {
         
     int i = threadIdx.y + blockIdx.y * blockDim.y;
     int j = threadIdx.x + blockIdx.x * blockDim.x;
@@ -225,9 +225,9 @@ matrix<int> *detect_harris_points(matrix<uint8_t> *image_gray, int max_keypoints
     matrix<float> *dil = dilate(harris_resp, kernel);
     
     // we want to keep only elements which are local maximas in their neighborhood
-    matrix<bool> *harris_resp_dil = matrix_compare_equal(dil, harris_resp_cu, harris_resp->rows, harris_resp->cols);
+    matrix<bool> *harris_resp_dil = matrix_compare_equal(dil->values, harris_resp_cu, harris_resp->rows, harris_resp->cols);
     
-    matrix_compare_inverse(detect_mask, harris_resp_dil, harris_resp->rows, harris_resp->cols);
+    matrix_compare_inverse(detect_mask->values, harris_resp_dil->values, harris_resp->rows, harris_resp->cols);
 
     time1 = std::chrono::system_clock::now();
     diff = time1 - time2;
