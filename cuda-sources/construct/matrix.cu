@@ -8,6 +8,16 @@
 
 #include "matrix.hh"
 
+#define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
+inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=true)
+{
+   if (code != cudaSuccess) 
+   {
+      fprintf(stderr,"GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
+      if (abort) exit(code);
+   }
+}
+
 template <typename number>
 matrix<number>::matrix(int rows, int cols) : rows(rows), cols(cols) {
   values = (number *)malloc(sizeof(number) * rows * cols);
@@ -289,7 +299,10 @@ void bubbleSort(matrix<int> *indices, matrix<float> *values, int n)
     cudaMemcpy(values_gpu, values->values, values->rows * values->cols * sizeof(float), cudaMemcpyHostToDevice);
     gpuErrchk(cudaGetLastError());
 
-    bubbleSort_GPU<<<blocks, threads>>>(indices_gpu, values_gpu, n);
+    matrix<int> *ingpu = new matrix<int>(indices->rows, indices->cols, indices_gpu);
+    matrix<float> *vagpu = new matrix<float>(values->rows, values->cols, values_gpu);
+
+    bubbleSort_GPU<<<blocks, threads>>>(ingpu, vagpu, n);
 
     gpuErrchk(cudaGetLastError());
     gpuErrchk(cudaDeviceSynchronize());
