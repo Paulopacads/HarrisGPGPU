@@ -53,7 +53,7 @@ __global__ void set_bool_inverse(bool* m1, bool *m2, int mat_rows, int mat_cols)
 matrix<bool>* create_array_bool(int mat_rows, int mat_cols, bool value) {
     bool* output;
 
-    cudaMalloc(&output, mat_rows * mat_cols * sizeof(bool));
+    cudaMallocManaged(&output, mat_rows * mat_cols * sizeof(bool));
     gpuErrchk(cudaGetLastError());
 
     matrix<bool> *detect_mask = new matrix<bool>(mat_rows, mat_cols, output);
@@ -178,7 +178,6 @@ matrix<float> *compute_harris_response(matrix<uint8_t> *img) {
   return res;
 }
 
-
 matrix<int> *detect_harris_points(matrix<uint8_t> *image_gray, int max_keypoints,
                                      int min_distance, float threshold)
 {
@@ -190,18 +189,13 @@ matrix<int> *detect_harris_points(matrix<uint8_t> *image_gray, int max_keypoints
     auto time2 = std::chrono::system_clock::now();
     std::chrono::duration<double> diff = time2 - time1;
     std::cout << "Compute Harris corner response: " << diff.count() << "s" << std::endl;
-    
-    float* harris_resp_cu; 
-    cudaMalloc((void **) &harris_resp_cu, harris_resp->cols * harris_resp -> rows * sizeof(float));
-    gpuErrchk(cudaGetLastError());
-
-    cudaMemcpy(harris_resp_cu, harris_resp->values, harris_resp->cols * harris_resp -> rows * sizeof(float), cudaMemcpyHostToDevice);
-    gpuErrchk(cudaGetLastError());
 
     // 2. Filtering
     // 2.0 Mask init: all our filtering is performed using a mask
-
-    matrix<bool> *detect_mask = create_array_bool(harris_resp->rows, harris_resp->cols, true);
+    matrix<bool> *detect_mask = new matrix<bool>(harris_resp->rows, harris_resp->cols);
+    for (int i = 0; i < detect_mask->rows * detect_mask->cols; i++) {
+        (*detect_mask)[i] = true;
+    }
 
     time1 = std::chrono::system_clock::now();
     diff = time1 - time2;
@@ -212,8 +206,15 @@ matrix<int> *detect_harris_points(matrix<uint8_t> *image_gray, int max_keypoints
     auto new_tresh = min_harris_resp + threshold * (harris_resp->max() - min_harris_resp);
 
     // remove low response elements
-    matrix<bool> *mask_harris = create_mask_harris(harris_resp->rows, harris_resp->cols, new_tresh, harris_resp_cu);    
-    matrix_compare_inverse(detect_mask->values, mask_harris->values, harris_resp->rows, harris_resp->cols);
+    matrix<bool> *mask_harris = new matrix<bool>(harris_resp->rows, harris_resp->cols);
+    for (int i = 0; i < mask_harris->rows * mask_harris->cols; ++i) {
+        (*mask_harris)[i] = (*harris_resp)[i] > new_tresh ? true : false;
+    }
+
+    for (int i = 0; i < detect_mask->rows * detect_mask->cols; i++) {
+        if (!((*detect_mask)[i] && (*mask_harris)[i]))
+            (*detect_mask)[i] = false;
+    }
 
     time2 = std::chrono::system_clock::now();
     diff = time2 - time1;
@@ -223,17 +224,20 @@ matrix<int> *detect_harris_points(matrix<uint8_t> *image_gray, int max_keypoints
     // dil is an image where each local maxima value is propagated to its neighborhood (display it!)
     matrix<bool> *kernel = getStructuringElement(min_distance, min_distance);
     matrix<float> *dil = dilate(harris_resp, kernel);
-    
+
     // we want to keep only elements which are local maximas in their neighborhood
-    matrix<bool> *harris_resp_dil = matrix_compare_equal(dil->values, harris_resp_cu, harris_resp->rows, harris_resp->cols);
-    
-    matrix_compare_inverse(detect_mask->values, harris_resp_dil->values, harris_resp->rows, harris_resp->cols);
+    matrix<bool> *harris_resp_dil = new matrix<bool>(harris_resp->rows, harris_resp->cols);
+    for (int i = 0; i < harris_resp->rows * harris_resp->cols; ++i) {
+        (*harris_resp_dil)[i] = (*harris_resp)[i] == (*dil)[i] ? true : false; // keep only local maximas by comparing dil and harris_resp
+    }
+    for (int i = 0; i < harris_resp_dil->rows * harris_resp_dil->cols; ++i) {
+        if (!((*detect_mask)[i] && (*harris_resp_dil)[i]))
+            (*detect_mask)[i] = false;
+    }
 
     time1 = std::chrono::system_clock::now();
     diff = time1 - time2;
     std::cout << "Non-maximal suppression: " << diff.count() << "s" << std::endl;
-
-    gpuErrchk(cudaDeviceSynchronize());
 
     // 3. Select, sort and filter candidates
 
@@ -261,10 +265,8 @@ matrix<int> *detect_harris_points(matrix<uint8_t> *image_gray, int max_keypoints
     }
 
     thrust::sort_by_key(thrust::host, test_values, test_values + nb_candidates, sorted_indices);
-
-    // quickSort(sorted_indices, candidates_values, 0, nb_candidates - 1);
-
     // keep only the bests
+
     if (max_keypoints > nb_candidates)
         max_keypoints = nb_candidates;
 
@@ -279,16 +281,14 @@ matrix<int> *detect_harris_points(matrix<uint8_t> *image_gray, int max_keypoints
     std::cout << "Select, sort and filter candidates: " << diff.count() << "s" << std::endl;
 
     delete harris_resp;
-    cudaFree(harris_resp_cu);
-    cudaFree(detect_mask->values);
-    cudaFree(mask_harris->values);
+    delete detect_mask;
+    delete mask_harris;
     cudaFree(kernel->values);
     cudaFree(dil->values);
     delete harris_resp_dil;
     delete candidates_coords;
     delete candidates_values;
     free(sorted_indices);
-    free(test_values);
 
     return best_corners_coordinates;
 }
