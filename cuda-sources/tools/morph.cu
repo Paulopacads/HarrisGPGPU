@@ -46,7 +46,7 @@ matrix<float> *dilate(matrix<float> *m1, matrix<bool> *m2) {
     float *m1_gpu;
     bool *m2_gpu;
 
-    cudaMallocManaged(&output_gpu,  m1->rows * m1->cols * sizeof(float));
+    cudaMalloc(&output_gpu,  m1->rows * m1->cols * sizeof(float));
     gpuErrchk(cudaGetLastError());
 
     cudaMalloc((void **) &m1_gpu, m1->rows * m1->cols * sizeof(float));
