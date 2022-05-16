@@ -255,8 +255,53 @@ void quickSort(matrix<int> *indices, matrix<number> *values, int start, int end)
 
 template void quickSort(matrix<int> *indices, matrix<float> *values, int start, int end);
 
-__global__ void bubbleSort_GPU(matrix<int> *indices, matrix<float> *values, int n)
+__global__ void bubbleSort_GPU(int *indices, float *values, int n)
 {
+    
+    int i = threadIdx.y + blockIdx.y * blockDim.y;
+    int j = threadIdx.x + blockIdx.x * blockDim.x;
+
+    if (values[indices[j]] > values[indices[j + 1]])
+    {
+        int swap = indices[j];
+        indices[j] = indices[j + 1];
+        indices[j + 1] = swap;
+    }
+}
+
+void bubbleSort(matrix<int> *indices, matrix<float> *values, int n)
+{
+    // int tx = 24;
+    // int ty = 16;
+
+    // dim3 blocks(indices->cols / tx, indices->rows / ty);
+    // dim3 threads(tx, ty);
+
+    // int *sorted_indices_gpu;
+    // int *indices_gpu;
+    // float *values_gpu;
+
+    // cudaMallocManaged(&sorted_indices_gpu, indices->rows * indices->cols * sizeof(int));
+    // gpuErrchk(cudaGetLastError());
+
+    // cudaMalloc((void **) &indices_gpu, indices->rows * indices->cols * sizeof(int));
+    // cudaMalloc((void **) &values_gpu, values->rows * values->cols * sizeof(float));
+
+    // matrix<int> *sorted_indices = new matrix<int>(indices->rows, indices->cols, sorted_indices_gpu);
+
+    // cudaMemcpy(indices_gpu, indices->values, indices->rows * indices->cols * sizeof(int), cudaMemcpyHostToDevice);
+    // gpuErrchk(cudaGetLastError());
+
+    // cudaMemcpy(values_gpu, values->values, values->rows * values->cols * sizeof(float), cudaMemcpyHostToDevice);
+    // gpuErrchk(cudaGetLastError());
+
+    // bubbleSort_GPU<<<blocks, threads>>>(indices_gpu, values_gpu, n);
+    // gpuErrchk(cudaGetLastError());
+    // gpuErrchk(cudaDeviceSynchronize());
+
+    // cudaFree(indices_gpu);
+    // cudaFree(values_gpu);
+    // indices = sorted_indices;
     for (int i = 0; i < n - 1; i++)
     {
         // Last i elements are already
@@ -271,45 +316,6 @@ __global__ void bubbleSort_GPU(matrix<int> *indices, matrix<float> *values, int 
             }
         }
     }
-}
-
-void bubbleSort(matrix<int> *indices, matrix<float> *values, int n)
-{
-    int tx = 24;
-    int ty = 16;
-
-    dim3 blocks(indices->cols / tx, indices->rows / ty);
-    dim3 threads(tx, ty);
-
-    int *sorted_indices_gpu;
-    int *indices_gpu;
-    float *values_gpu;
-
-    cudaMallocManaged(&sorted_indices_gpu, indices->rows * indices->cols * sizeof(int));
-    gpuErrchk(cudaGetLastError());
-
-    cudaMalloc((void **) &indices_gpu, indices->rows * indices->cols * sizeof(int));
-    cudaMalloc((void **) &values_gpu, values->rows * values->cols * sizeof(float));
-
-    matrix<int> *sorted_indices = new matrix<int>(indices->rows, indices->cols, sorted_indices_gpu);
-
-    cudaMemcpy(indices_gpu, indices->values, indices->rows * indices->cols * sizeof(int), cudaMemcpyHostToDevice);
-    gpuErrchk(cudaGetLastError());
-
-    cudaMemcpy(values_gpu, values->values, values->rows * values->cols * sizeof(float), cudaMemcpyHostToDevice);
-    gpuErrchk(cudaGetLastError());
-
-    matrix<int> *ingpu = new matrix<int>(indices->rows, indices->cols, indices_gpu);
-    matrix<float> *vagpu = new matrix<float>(values->rows, values->cols, values_gpu);
-
-    bubbleSort_GPU<<<blocks, threads>>>(ingpu, vagpu, n);
-
-    gpuErrchk(cudaGetLastError());
-    gpuErrchk(cudaDeviceSynchronize());
-
-    cudaFree(indices_gpu);
-    cudaFree(values_gpu);
-    indices = sorted_indices;
 }
 
 template <typename number>
