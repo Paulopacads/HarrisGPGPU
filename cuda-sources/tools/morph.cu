@@ -72,25 +72,25 @@ matrix<float> *dilate(matrix<float> *m1, matrix<bool> *m2) {
 }
 
 __global__ void getStructuringGPU(bool *output, int rows, int cols) {
+
+    int i = threadIdx.y + blockIdx.y * blockDim.y;
+    int j = threadIdx.x + blockIdx.x * blockDim.x;
     
     int r = rows / 2;
     int c = cols / 2;
-    double inv_r2 = r ? 1./((double)r*r) : 0;
-        
-    int i = threadIdx.y + blockIdx.y * blockDim.y;
-    int j = threadIdx.x + blockIdx.x * blockDim.x;
 
     int j1 = 0;
     int j2 = 0;
-    int dy = i - r;
-    if(std::abs(dy) <= r)
+    double dy = i - r;
+    if(-r <= dy && dy <= r)
     {
-        int dx = c*std::sqrt((r*r - dy*dy)*inv_r2);
-        j1 = c - dx;
+        double tmp = 1 - dy * dy / (r * r);
+        int dx = r ? c * std::sqrt(tmp) : 0;
+        j1 = c - dx - 1;
         j2 = c + dx + 1;
     }
 
-    output[i * cols + j] = j < j2 && j >= j1;
+    output[i * cols + j] = j < j2 && j > j1;
 }
 
 matrix<bool> *getStructuringElement(int rows, int cols) {
