@@ -180,8 +180,7 @@ def detect_harris_points(image_gray: np.array, max_keypoints: int=30,
     # 2. Filtering
     # 2.0 Mask init: all our filtering is performed using a mask
     detect_mask = np.ones(harris_resp.shape, dtype=bool)
-    # 2.1 Background and border removal
-    detect_mask &= bubble2maskeroded(image_gray, border=min_distance)
+
     # 2.2 Response threshold
     new_tresh = np.min(harris_resp) + threshold * (np.max(harris_resp) - np.min(harris_resp))
     detect_mask &= harris_resp > new_tresh# FIXME <------------------------  # remove low response elements
@@ -229,12 +228,11 @@ def main():
     harris_points = detect_harris_points(image_gray, max_keypoints)
 
     for point in harris_points:
-        image = cv2.circle(image, (point[1], point[0]), radius=1, color=(0, 0, 255), thickness=-1)
+        image = cv2.circle(image, (point[1], point[0]), radius=10, color=(0, 0, 255), thickness=-1)
 
-    if not os.path.exists("output"):
-        os.mkdir("output")
+    cv2.imwrite("output.png", image)
 
-    cv2.imwrite("output/" + filename, image)
+    print(len(harris_points))
 
 if __name__ == "__main__":
     main()
