@@ -5,6 +5,38 @@
 #include <chrono>
 #include <iostream>
 
+__global__ void set_array_bool(float *mat, int mat_rows, int mat_cols, bool value) {
+        
+    int i = threadIdx.y + blockIdx.y * blockDim.y;
+    int j = threadIdx.x + blockIdx.x * blockDim.x;
+
+    mat[i * mat_cols + j] = value;
+}
+
+__global__ void set_bool_inferior(bool* output, float *mat, int mat_rows, int mat_cols, float threshold) {
+        
+    int i = threadIdx.y + blockIdx.y * blockDim.y;
+    int j = threadIdx.x + blockIdx.x * blockDim.x;
+
+    output[i * mat_cols + j] = mat[i * mat_cols + j] > threshold;
+}
+
+__global__ void set_bool_equal(bool* output, float *mat, int mat_rows, int mat_cols, float threshold) {
+        
+    int i = threadIdx.y + blockIdx.y * blockDim.y;
+    int j = threadIdx.x + blockIdx.x * blockDim.x;
+
+    output[i * mat_cols + j] = mat[i * mat_cols + j] == threshold;
+}
+
+__global__ void set_bool_inverse(bool* m1, bool *m2, int mat_rows, int mat_cols) {
+        
+    int i = threadIdx.y + blockIdx.y * blockDim.y;
+    int j = threadIdx.x + blockIdx.x * blockDim.x;
+
+    m1[i * mat_cols + j] = !(m1[i * mat_cols + j] && m2[i * mat_cols + j]);
+}
+
 matrix<float> *compute_harris_response(matrix<uint8_t> *img) {
   int derivativeKernelSize = 1;
   int opening_size = 1;
