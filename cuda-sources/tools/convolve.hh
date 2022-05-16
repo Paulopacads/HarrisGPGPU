@@ -4,6 +4,10 @@
 
 #include <cstdio>
 
+template <typename num>
+matrix<float> *convolve(matrix<num> *m1, matrix<float> *m2);
+
+/*
 template <typename num1, typename num2>
 matrix<float> *convolve(matrix<num1> *m1, matrix<num2> *m2) {
     matrix<float> *output = new matrix<float>(m1->rows, m1->cols);
@@ -12,7 +16,6 @@ matrix<float> *convolve(matrix<num1> *m1, matrix<num2> *m2) {
 
     for (int i = 0; i < m1->rows; i++) {
         for (int j = 0; j < m1->cols; j++) {
-            float sum = 0;
             float conv = 0;
 
             for (int k = 0; k < m2->rows; k++) {
@@ -22,7 +25,6 @@ matrix<float> *convolve(matrix<num1> *m1, matrix<num2> *m2) {
                     num1 value = 0;
                     if (x_pos >= 0 && y_pos >= 0 && x_pos < m1->rows && y_pos < m1->cols)
                         value = (*m1)[x_pos * m1->cols + y_pos];
-                    sum += (*m2)[k * m2->cols + l];
                     conv += (*m2)[k * m2->cols + l] * value;
                     //if (i == 0 && j == 1)
                     //    printf("value: %d, conv: %f\n", value, (*m2)[k * m2->cols + l]);
@@ -33,4 +35,4 @@ matrix<float> *convolve(matrix<num1> *m1, matrix<num2> *m2) {
         }
     }
     return output;
-}
+}*/

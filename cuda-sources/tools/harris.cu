@@ -36,15 +36,15 @@ matrix<float> *compute_harris_response(matrix<uint8_t> *img) {
   
   matrix<float> *res = mat_divide_element_wise(wdet, wtr1);
 
-  delete tupleImxy.mat1;
-  delete tupleImxy.mat2;
+  cudaFree(tupleImxy.mat1->values);
+  cudaFree(tupleImxy.mat2->values);
   delete gauss;
   delete imxx;
   delete imyy;
   delete imxy;
-  delete wxx;
-  delete wyy;
-  delete wxy;
+  cudaFree(wxx->values);
+  cudaFree(wyy->values);
+  cudaFree(wxy->values);
   delete wxxwyy;
   delete wxyxy;
   delete wdet;
