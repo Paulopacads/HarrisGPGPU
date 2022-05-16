@@ -71,36 +71,45 @@ matrix<float> *dilate(matrix<float> *m1, matrix<bool> *m2) {
     return output;
 }
 
-matrix<bool> *getStructuringElement(int rows, int cols)
-{
-    int i, j;
-    int r = 0, c = 0;
-    double inv_r2 = 0;
+__global__ void getStructuringGPU(bool *output, int rows, int cols) {
+    
+    int r = rows / 2;
+    int c = cols / 2;
+    double inv_r2 = r ? 1./((double)r*r) : 0;
+        
+    int i = threadIdx.y + blockIdx.y * blockDim.y;
+    int j = threadIdx.x + blockIdx.x * blockDim.x;
 
-    r = rows/2;
-    c = cols/2;
-    inv_r2 = r ? 1./((double)r*r) : 0;
-
-    matrix<bool> *elem = new matrix<bool>(rows, cols);
-
-    for( i = 0; i < rows; i++ )
+    int j1 = 0;
+    int j2 = 0;
+    int dy = i - r;
+    if(std::abs(dy) <= r)
     {
-        int j1 = 0, j2 = 0;
-        int dy = i - r;
-        if( std::abs(dy) <= r )
-        {
-            int dx = c*std::sqrt((r*r - dy*dy)*inv_r2);
-            j1 = std::max( c - dx, 0 );
-            j2 = std::min( c + dx + 1, cols );
-        }
-
-        for( j = 0; j < j1; j++ )
-            (*elem)[i * cols + j] = false;
-        for( ; j < j2; j++ )
-            (*elem)[i * cols + j] = true;
-        for( ; j < rows; j++ )
-            (*elem)[i * cols + j] = false;
+        int dx = c*std::sqrt((r*r - dy*dy)*inv_r2);
+        j1 = c - dx;
+        j2 = c + dx + 1;
     }
 
-    return elem;
+    output[i * cols + j] = j < j2 && j >= j1;
+}
+
+matrix<bool> *getStructuringElement(int rows, int cols) {
+    int tx = 24;
+    int ty = 16;
+
+    dim3 blocks(cols / tx, rows / ty);
+    dim3 threads(tx, ty);
+
+    bool *output_gpu;
+
+    cudaMallocManaged(&output_gpu, rows * cols * sizeof(bool));
+    gpuErrchk(cudaGetLastError());
+
+    matrix<bool> *output = new matrix<bool>(rows, cols, output_gpu);
+    
+    getStructuringGPU<<<blocks, threads>>>(output->values, rows, cols);
+    gpuErrchk(cudaGetLastError());
+    gpuErrchk(cudaDeviceSynchronize());
+
+    return output;
 }

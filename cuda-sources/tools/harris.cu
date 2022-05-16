@@ -154,7 +154,7 @@ matrix<int> *detect_harris_points(matrix<uint8_t> *image_gray, int max_keypoints
     delete harris_resp;
     delete detect_mask;
     delete mask_harris;
-    delete kernel;
+    cudaFree(kernel->values);
     cudaFree(dil->values);
     delete harris_resp_dil;
     delete candidates_coords;
