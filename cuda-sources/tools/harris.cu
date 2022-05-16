@@ -33,12 +33,12 @@ __global__ void set_bool_inferior(bool* output, float *mat, int mat_rows, int ma
     output[i * mat_cols + j] = mat[i * mat_cols + j] > threshold;
 }
 
-__global__ void set_bool_equal(bool*ourput, float* mat1, float*mat2, int mat_rows, int mat_cols) {
+__global__ void set_bool_equal(bool*output, float* mat1, float*mat2, int mat_rows, int mat_cols) {
         
     int i = threadIdx.y + blockIdx.y * blockDim.y;
     int j = threadIdx.x + blockIdx.x * blockDim.x;
 
-    mat1[i * mat_cols + j] = mat1[i * mat_cols + j] == mat1[i * mat_cols + j];
+    output[i * mat_cols + j] = mat1[i * mat_cols + j] == mat1[i * mat_cols + j];
 }
 
 __global__ void set_bool_inverse(bool* m1, bool *m2, int mat_rows, int mat_cols) {
@@ -71,10 +71,10 @@ matrix<bool>* create_array_bool(int mat_rows, int mat_cols, bool value) {
     return detect_mask;
 }
 
-matrix<bool> *create_mask_harris(int mat_rows, int mat_cols, int threshold, float* harris_resp) {
+matrix<bool> *create_mask_harris(int mat_rows, int mat_cols, float threshold, float* harris_resp) {
     bool* output;
 
-    cudaMalloc(&output, mat_rows * mat_cols * sizeof(bool));
+    cudaMallocManaged(&output, mat_rows * mat_cols * sizeof(bool));
     gpuErrchk(cudaGetLastError());
 
     matrix<bool> *mask = new matrix<bool>(mat_rows, mat_cols, output);
@@ -85,7 +85,7 @@ matrix<bool> *create_mask_harris(int mat_rows, int mat_cols, int threshold, floa
     dim3 blocks(mat_cols / tx, mat_rows / ty);
     dim3 threads(tx, ty);
     
-    set_bool_inferior<<<blocks, threads>>>(output, harris_resp, mat_rows, mat_cols, true);
+    set_bool_inferior<<<blocks, threads>>>(output, harris_resp, mat_rows, mat_cols, threshold);
     gpuErrchk(cudaGetLastError());
 
     return mask;
@@ -105,7 +105,7 @@ void matrix_compare_inverse(bool* m1, bool* m2, int mat_rows, int mat_cols) {
 matrix<bool>* matrix_compare_equal(float* m1, float* m2, int mat_rows, int mat_cols) {
     bool* output;
 
-    cudaMalloc(&output, mat_rows * mat_cols * sizeof(bool));
+    cudaMallocManaged(&output, mat_rows * mat_cols * sizeof(bool));
     gpuErrchk(cudaGetLastError());
 
     matrix<bool> *mask = new matrix<bool>(mat_rows, mat_cols, output);
@@ -190,32 +190,30 @@ matrix<int> *detect_harris_points(matrix<uint8_t> *image_gray, int max_keypoints
     std::chrono::duration<double> diff = time2 - time1;
     std::cout << "Compute Harris corner response: " << diff.count() << "s" << std::endl;
 
+    float* harris_resp_cu; 
+    cudaMalloc(&harris_resp_cu, harris_resp->cols * harris_resp -> rows * sizeof(float));
+    gpuErrchk(cudaGetLastError());
+
+    cudaMemcpy(harris_resp_cu, harris_resp->values, harris_resp->cols * harris_resp -> rows * sizeof(float), cudaMemcpyHostToDevice);
+    gpuErrchk(cudaGetLastError());
     // 2. Filtering
     // 2.0 Mask init: all our filtering is performed using a mask
-    matrix<bool> *detect_mask = new matrix<bool>(harris_resp->rows, harris_resp->cols);
-    for (int i = 0; i < detect_mask->rows * detect_mask->cols; i++) {
-        (*detect_mask)[i] = true;
-    }
+    matrix<bool> *detect_mask = create_array_bool(harris_resp->rows, harris_resp->cols, true);
 
+    
     time1 = std::chrono::system_clock::now();
     diff = time1 - time2;
     std::cout << "Filtering: " << diff.count() << "s" << std::endl;
 
     // 2.2 Response threshold
-    uint8_t min_harris_resp = harris_resp->min();
-    auto new_tresh = min_harris_resp + threshold * (harris_resp->max() - min_harris_resp);
+    float min_harris_resp = harris_resp->min();
+    float new_tresh = min_harris_resp + threshold * (harris_resp->max() - min_harris_resp);
 
     // remove low response elements
-    matrix<bool> *mask_harris = new matrix<bool>(harris_resp->rows, harris_resp->cols);
-    for (int i = 0; i < mask_harris->rows * mask_harris->cols; ++i) {
-        (*mask_harris)[i] = (*harris_resp)[i] > new_tresh ? true : false;
-    }
+    matrix<bool> *mask_harris = create_mask_harris(harris_resp->rows, harris_resp->cols, new_tresh, harris_resp_cu);    
+    matrix_compare_inverse(detect_mask->values, mask_harris->values, harris_resp->rows, harris_resp->cols);
 
-    for (int i = 0; i < detect_mask->rows * detect_mask->cols; i++) {
-        if (!((*detect_mask)[i] && (*mask_harris)[i]))
-            (*detect_mask)[i] = false;
-    }
-
+    
     time2 = std::chrono::system_clock::now();
     diff = time2 - time1;
     std::cout << "Response threshold: " << diff.count() << "s" << std::endl;
@@ -226,14 +224,11 @@ matrix<int> *detect_harris_points(matrix<uint8_t> *image_gray, int max_keypoints
     matrix<float> *dil = dilate(harris_resp, kernel);
 
     // we want to keep only elements which are local maximas in their neighborhood
-    matrix<bool> *harris_resp_dil = new matrix<bool>(harris_resp->rows, harris_resp->cols);
-    for (int i = 0; i < harris_resp->rows * harris_resp->cols; ++i) {
-        (*harris_resp_dil)[i] = (*harris_resp)[i] == (*dil)[i] ? true : false; // keep only local maximas by comparing dil and harris_resp
-    }
-    for (int i = 0; i < harris_resp_dil->rows * harris_resp_dil->cols; ++i) {
-        if (!((*detect_mask)[i] && (*harris_resp_dil)[i]))
-            (*detect_mask)[i] = false;
-    }
+
+
+    matrix<bool> *harris_resp_dil = matrix_compare_equal(dil->values, harris_resp_cu, harris_resp->rows, harris_resp->cols);
+    matrix_compare_inverse(detect_mask->values, harris_resp_dil->values, harris_resp->rows, harris_resp->cols);
+    gpuErrchk(cudaDeviceSynchronize());
 
     time1 = std::chrono::system_clock::now();
     diff = time1 - time2;
@@ -281,11 +276,12 @@ matrix<int> *detect_harris_points(matrix<uint8_t> *image_gray, int max_keypoints
     std::cout << "Select, sort and filter candidates: " << diff.count() << "s" << std::endl;
 
     delete harris_resp;
-    delete detect_mask;
-    delete mask_harris;
+    cudaFree(harris_resp_cu);
+    cudaFree(detect_mask->values);
+    cudaFree(mask_harris->values);
     cudaFree(kernel->values);
     cudaFree(dil->values);
-    delete harris_resp_dil;
+    cudaFree(harris_resp_dil->values);
     delete candidates_coords;
     delete candidates_values;
     free(sorted_indices);
