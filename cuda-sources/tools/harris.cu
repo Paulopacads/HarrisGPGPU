@@ -1,6 +1,8 @@
 #include "harris.hh"
 #include "convolve.hh"
 #include "morph.hh"
+#include <thrust/sort.h>
+#include <thrust/execution_policy.h>
 
 #include <chrono>
 #include <iostream>
@@ -168,6 +170,31 @@ matrix<int> *detect_harris_points(matrix<uint8_t> *image_gray, int max_keypoints
         (*sorted_indices)[i] = i;
     }
 
+    //////// TEST ////////
+
+    matrix<int> *test_indices = new matrix<int>(1, 5);
+    for (int i = 0; i < test_indices->rows * test_indices->cols; ++i) {
+        (*test_indices)[i] = i;
+    }
+
+    matrix<float> *test_values = new matrix<float>(1, 5);
+    (*test_values)[0] = 0.3;
+    (*test_values)[1] = 0.1;
+    (*test_values)[2] = 0.2;
+    (*test_values)[3] = 0.5;
+    (*test_values)[4] = 0.4;
+
+    printf("////// TEST //////\nbefore sort:\n");
+    for (int i = 0; i < 5; ++i) {
+        printf("value: %f , indice: %d", (*test_values)[i], (*test_indices)[i]);
+    }
+    thrust::sort_by_key(thrust::host, test_values, test_values + 5, test_indices);
+    printf("////// TEST //////\nafter sort:\n");
+    for (int i = 0; i < 5; ++i) {
+        printf("value: %f , indice: %d", (*test_values)[i], (*test_indices)[i]);
+    }
+
+    //////// TEST ///////
     bubbleSort(sorted_indices, candidates_values, nb_candidates);
 
     // keep only the bests
