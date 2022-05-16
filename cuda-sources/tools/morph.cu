@@ -104,12 +104,3 @@ matrix<bool> *getStructuringElement(int rows, int cols)
 
     return elem;
 }
-
-matrix<bool> *bubble2maskeroded(matrix<uint8_t> *img_gray, int border)
-{
-    matrix<bool> *mask = *img_gray > 0;
-    matrix<bool> *kernel = getStructuringElement(border*2, border*2);
-
-    matrix<bool> *mask_er = erode(mask, kernel);
-    return *mask_er > 0;
-}
