@@ -125,18 +125,34 @@ template <typename number> number &matrix<number>::operator[](int i) {
   return values[i];
 }
 
-template <typename num1, typename num2>
-matrix<num1> *mat_multiply_element_wise(matrix<num1> *mat1,
-                                        matrix<num2> *mat2) {
+__global__ void multiply_cu(float* output, float* m1, float* m2, int mat_cols) {
+    int i = threadIdx.y + blockIdx.y * blockDim.y;
+    int j = threadIdx.x + blockIdx.x * blockDim.x;
+
+    output[i * mat_cols + j] = m1[i * mat_cols + j] * m2[i * mat_cols + j];
+}
+
+
+matrix<float> *mat_multiply_element_wise(matrix<float> *mat1,
+                                        matrix<float> *mat2) {
   assert(mat1->rows == mat2->rows && mat1->cols == mat2->cols);
+  
+  float *output;
 
-  matrix<num1> *newMat = new matrix<num1>(mat1->rows, mat1->cols);
+  cudaMallocManaged(&output, mat1->rows * mat1->cols * sizeof(float));
+  gpuErrchk(cudaGetLastError());
 
-  int size = mat1->rows * mat1->cols;
+  matrix<float> *newMat = new matrix<float>(mat1->rows, mat1->cols, output);
 
-  for (int i = 0; i < size; i++) {
-    (*newMat)[i] = (*mat1)[i] * (*mat2)[i];
-  }
+  int tx = 24;
+  int ty = 16;
+
+  dim3 blocks(mat1->cols / tx, mat1->rows / ty);
+  dim3 threads(tx, ty);
+  
+  multiply_cu<<<blocks, threads>>>(output, mat1->values, mat2->values, mat1->cols);
+  gpuErrchk(cudaGetLastError());
+  gpuErrchk(cudaDeviceSynchronize());
 
   return newMat;
 }
@@ -188,7 +204,6 @@ matrix<num1> *mat_add_element_wise(matrix<num1> *mat1, matrix<num2> *mat2) {
 
 template matrix<float>* mat_add_element_wise<float, float>(matrix<float> *mat1, matrix<float> *mat2);
 template matrix<float>* mat_diff_element_wise<float, float>(matrix<float> *mat1, matrix<float> *mat2);
-template matrix<float>* mat_multiply_element_wise<float, float>(matrix<float> *mat1, matrix<float> *mat2);
 template matrix<float>* mat_divide_element_wise<float, float>(matrix<float> *mat1, matrix<float> *mat2);
 
 template <typename number>

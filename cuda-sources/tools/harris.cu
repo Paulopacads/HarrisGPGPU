@@ -74,7 +74,7 @@ matrix<bool>* create_array_bool(int mat_rows, int mat_cols, bool value) {
 matrix<bool> *create_mask_harris(int mat_rows, int mat_cols, float threshold, float* harris_resp) {
     bool* output;
 
-    cudaMallocManaged(&output, mat_rows * mat_cols * sizeof(bool));
+    cudaMalloc(&output, mat_rows * mat_cols * sizeof(bool));
     gpuErrchk(cudaGetLastError());
 
     matrix<bool> *mask = new matrix<bool>(mat_rows, mat_cols, output);
@@ -105,7 +105,7 @@ void matrix_compare_inverse(bool* m1, bool* m2, int mat_rows, int mat_cols) {
 matrix<bool>* matrix_compare_equal(float* m1, float* m2, int mat_rows, int mat_cols) {
     bool* output;
 
-    cudaMallocManaged(&output, mat_rows * mat_cols * sizeof(bool));
+    cudaMalloc(&output, mat_rows * mat_cols * sizeof(bool));
     gpuErrchk(cudaGetLastError());
 
     matrix<bool> *mask = new matrix<bool>(mat_rows, mat_cols, output);
@@ -163,14 +163,14 @@ matrix<float> *compute_harris_response(matrix<uint8_t> *img) {
   cudaFree(tupleImxy.mat2->values);
   delete gauss;
   cudaFree(gauss_gpu);
-  delete imxx;
-  delete imyy;
-  delete imxy;
+  cudaFree(imxx->values);
+  cudaFree(imyy->values);
+  cudaFree(imxy->values);
   cudaFree(wxx->values);
   cudaFree(wyy->values);
   cudaFree(wxy->values);
-  delete wxxwyy;
-  delete wxyxy;
+  cudaFree(wxxwyy->values);
+  cudaFree(wxyxy->values);
   delete wdet;
   delete wtr;
   delete wtr1;
@@ -224,8 +224,6 @@ matrix<int> *detect_harris_points(matrix<uint8_t> *image_gray, int max_keypoints
     matrix<float> *dil = dilate(harris_resp, kernel);
 
     // we want to keep only elements which are local maximas in their neighborhood
-
-
     matrix<bool> *harris_resp_dil = matrix_compare_equal(dil->values, harris_resp_cu, harris_resp->rows, harris_resp->cols);
     matrix_compare_inverse(detect_mask->values, harris_resp_dil->values, harris_resp->rows, harris_resp->cols);
     gpuErrchk(cudaDeviceSynchronize());

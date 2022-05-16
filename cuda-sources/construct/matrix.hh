@@ -33,8 +33,8 @@ public:
   void view();
 };
 
-template <typename num1, typename num2>
-matrix<num1> *mat_multiply_element_wise(matrix<num1> *mat1, matrix<num2> *mat2);
+matrix<float> *mat_multiply_element_wise(matrix<float> *mat1,
+                                        matrix<float> *mat2);
 template <typename num1, typename num2>
 matrix<num1> *mat_diff_element_wise(matrix<num1> *mat1, matrix<num2> *mat2);
 template <typename num1, typename num2>
