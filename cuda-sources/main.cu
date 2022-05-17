@@ -14,8 +14,8 @@
 #include <cstdint>
 
 int main(int argc, char **argv) {
-    if (argc != 3) {
-        fprintf(stderr, "Invalid parameters\nformat: harris.py <file_path> <max_keypoints>\n");
+    if (argc < 3 && argc > 4) {
+        fprintf(stderr, "Invalid parameters\nformat: ./cuHarrisDetector <file_path> <max_keypoints> [-print]\n");
         return 1;
     }
 
@@ -34,14 +34,17 @@ int main(int argc, char **argv) {
 
     delete gray_image;
 
-    pixels = stbi_load(filename, &width, &height, &bpp, 3);
-    matrix<uint8_t> *image = new matrix<uint8_t>(height, width * 3, pixels);
+    if (argc == 4)
+    {
+        pixels = stbi_load(filename, &width, &height, &bpp, 3);
+        matrix<uint8_t> *image = new matrix<uint8_t>(height, width * 3, pixels);
 
-    paint(image, response);
+        paint(image, response);
 
-    stbi_write_png("output.jpg", width, height, 3, pixels, width * 3);
+        stbi_write_png("output.jpg", width, height, 3, pixels, width * 3);
 
-    delete image;
+        delete image;
+    }
     delete response;
 
     return 0;

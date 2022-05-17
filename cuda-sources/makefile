@@ -5,7 +5,7 @@ H_FILES =  construct/*.h tools/*.h
 
 OBJ_FILES = $(CPP_FILES:.cu=.o)
 
-CXX_FLAGS += -O3 -g -G
+CXX_FLAGS += -O3
 LDXX_FLAGS =
 
 all: build

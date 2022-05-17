@@ -14,8 +14,8 @@
 #include <cstdint>
 
 int main(int argc, char **argv) {
-    if (argc != 3) {
-        fprintf(stderr, "Invalid parameters\nformat: harris.py <file_path> <max_keypoints>\n");
+    if (argc < 3 && argc > 4) {
+        fprintf(stderr, "Invalid parameters\nformat: ./cppHarrisDetector <file_path> <max_keypoints> [-print]\n");
         return 1;
     }
 
@@ -33,9 +33,12 @@ int main(int argc, char **argv) {
 
     matrix<int> *response = detect_harris_points(image, atoi(argv[2]));
 
-    paint(image, response);
+    if (argc == 4)
+    {
+        paint(image, response);
 
-    stbi_write_png("output.jpg", width, height, 1, pixels, width * 1);
+        stbi_write_png("output.jpg", width, height, 1, pixels, width * 1);
+    }
 
     delete image;
     delete response;
